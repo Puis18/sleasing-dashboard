@@ -894,9 +894,8 @@ body.drill-open{overflow:hidden;}
         <thead><tr id="cmHead">
           <th>Team</th><th class="num">เคสรวม</th>
           <th class="num">พนักงาน·Sfast</th><th class="num">พนักงาน·S Phone</th>
-          <th class="num">ดีลเลอร์·Sfast</th><th class="num">ดีลเลอร์·S Phone</th>
+          <th class="num">ดีลเลอร์·S Phone</th>
           <th class="num">MC·Sfast</th><th class="num">MC·S Phone</th>
-          <th class="num">ไม่ระบุ·Sfast</th><th class="num">ไม่ระบุ·S Phone</th>
           <th class="num">% ดีลเลอร์</th>
         </tr></thead>
         <tbody id="cmTable"></tbody>
@@ -2982,7 +2981,7 @@ function renderCaseMaker(rows, teamFiltered){
   const ttl=document.getElementById('cmTitle');
   if(!cm.length){
     kel.innerHTML='';
-    el.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:14px">ไม่มีข้อมูลแอปทำเคสในช่วงที่เลือก</td></tr>';
+    el.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:14px">ไม่มีข้อมูลแอปทำเคสในช่วงที่เลือก</td></tr>';
     return;
   }
   let es=0,ep=0,ds=0,dp=0,ms=0,mp=0,us=0,up=0;
@@ -3038,9 +3037,8 @@ function renderCaseMaker(rows, teamFiltered){
     const nm=byPerson?`${r.key} <span class="cm-pill ${p[0]}">${p[1]}</span>`:r.key;
     return `<tr><td>${nm}</td><td class="num"><b>${cell(r.tot,r,'','')}</b></td>
       <td class="num cm-e">${cell(r.a[0],r,'emp','1')}</td><td class="num cm-e">${cell(r.a[1],r,'emp','2')}</td>
-      <td class="num cm-d">${cell(r.a[2],r,'dlr','1')}</td><td class="num cm-d">${cell(r.a[3],r,'dlr','2')}</td>
+      <td class="num cm-d">${cell(r.a[3],r,'dlr','2')}</td>
       <td class="num cm-m">${cell(r.a[4],r,'mc','1')}</td><td class="num cm-m">${cell(r.a[5],r,'mc','2')}</td>
-      <td class="num cm-u">${cell(r.a[6],r,'unk','1')}</td><td class="num cm-u">${cell(r.a[7],r,'unk','2')}</td>
       <td class="num ${pct>=15?'cm-d':''}">${pct.toFixed(1)}%</td></tr>`;
   }).join('');
 }
