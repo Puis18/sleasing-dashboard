@@ -328,6 +328,23 @@ header{
 .page{display:none;}
 .page.active{display:block;}
 
+/* ── ผู้ทำเคส: พนักงาน EA vs ดีลเลอร์ / Sfast vs S Phone ── */
+.cm-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px;}
+.cm-kpi{border:1px solid var(--border);border-radius:10px;padding:8px 12px;background:#FBFCFE;}
+.cm-kpi .l{font-size:10.5px;color:var(--muted);}
+.cm-kpi .v{font-size:18px;font-weight:800;}
+.cm-kpi.navy .v{color:var(--navy);} .cm-kpi.green .v{color:var(--green);}
+.cm-kpi.orange .v{color:#C46A1B;} .cm-kpi.blue .v{color:var(--blue);}
+.cm-kpi.purple .v{color:#6B4FA0;}
+.cm-sub{font-size:11px;font-weight:600;color:var(--muted);}
+.cm-e{color:var(--green);} .cm-d{color:#C46A1B;font-weight:600;}
+.cm-pill{display:inline-block;font-size:9.5px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:4px;}
+.cm-emp{background:var(--green-light);color:var(--green);}
+.cm-dlr{background:#FBEEDD;color:#C46A1B;}
+.cm-note{font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.7;}
+.cm-e .apps-clickable{color:var(--green);text-decoration-color:rgba(26,122,79,.45);}
+.cm-d .apps-clickable{color:#C46A1B;text-decoration-color:rgba(196,106,27,.45);}
+
 /* ── SECTION TITLES ── */
 .section-title{
   font-size:12.5px;font-weight:800;margin:18px 2px 8px;color:var(--navy);
@@ -860,6 +877,26 @@ body.drill-open{overflow:hidden;}
       <div style="font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:2px">Monthly Contract Volume</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:10px">จำนวนเคสและยอด Finance รายเดือน</div>
       <div class="chart-wrap med"><canvas id="monthlyVolumeChartP"></canvas></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-title"><span class="bar"></span>📲 <span id="cmTitle">ผู้ทำเคส — พนักงาน EA vs ดีลเลอร์ (Sfast / S Phone)</span></div>
+    <div class="card">
+      <div id="cmKpis" class="cm-kpis"></div>
+      <div class="table-wrap"><table>
+        <thead><tr id="cmHead">
+          <th>Team</th><th class="num">เคสรวม</th>
+          <th class="num">พนักงาน·Sfast</th><th class="num">พนักงาน·S Phone</th>
+          <th class="num">ดีลเลอร์·Sfast</th><th class="num">ดีลเลอร์·S Phone</th>
+          <th class="num">% ดีลเลอร์</th>
+        </tr></thead>
+        <tbody id="cmTable"></tbody>
+      </table></div>
+      <div class="cm-note">แสดงเฉพาะทีม EA · แอปทำเคสอ้างอิงคอลัมน์ AppFromDevice (1 = Sfast, 2 = S Phone) เริ่มบันทึก 17/07/2026 ·
+        พนักงาน EA = ชื่อผู้ทำเคสอยู่ใน ฐานข้อมูลพนักงาน.xlsx · ดีลเลอร์ = ไม่พบชื่อในฐานข้อมูล
+        (ผลงานยังนับให้ทีมตามเดิม ไม่ตัดยอด — แต่จำนวนคน/Productivity นับเฉพาะพนักงาน EA) ·
+        เลือกทีมในฟิลเตอร์เพื่อดูรายคน · คลิกตัวเลขเพื่อดูรายละเอียดเคส</div>
     </div>
 
     <div class="divider"></div>
@@ -2051,7 +2088,10 @@ function agg(rows){
     if(isMo) mo++;
     if((r.protected_amt||0)>0) ins++;
     // Productivity tracking — count only ACTIVE marketing (excluding leaders-as-mkt)
-    if(r.marketing_fullname && r.marketing_fullname!=='—' && !r.is_leader_as_mkt){
+    // และไม่นับดีลเลอร์ทำเคส (maker='dlr' + มีข้อมูลแอป) — จำนวนคน/Productivity
+    // นับเฉพาะพนักงาน EA เท่านั้น (ยอด apps/finance ยังรวมเคสดีลเลอร์ตามปกติ)
+    if(r.marketing_fullname && r.marketing_fullname!=='—' && !r.is_leader_as_mkt
+       && r.maker!=='dlr'){
       _mktSet.add(r.marketing_fullname);
     }
     if(r._date && r._date!=='') _daySet.add(r._date);
@@ -2369,6 +2409,22 @@ function _drillScopeRows(scope){
   return all;
 }
 function _drillFilter(rows, field, value){
+  /* ผู้ทำเคส (EA vs ดีลเลอร์ / Sfast vs S Phone)
+     value = mode¦key¦maker¦app  (mode: t=ทีม, p=รายคน · maker/app ว่าง = ทั้งหมด) */
+  if(field === '_cm'){
+    const [mode,key,maker,app] = value.split('¦');
+    return rows.filter(r=>{
+      if(!(r.app_dev==='1'||r.app_dev==='2')) return false;
+      if(!(r.maker==='emp'||r.maker==='dlr')) return false;
+      if(mode==='p'){
+        const nm=(r.app_mkt_fullname&&r.app_mkt_fullname!=='—')?r.app_mkt_fullname:r.marketing_fullname;
+        if(nm!==key) return false;
+      }else if(r.team_short!==key) return false;
+      if(maker && r.maker!==maker) return false;
+      if(app && r.app_dev!==app) return false;
+      return true;
+    });
+  }
   if(field === 'override_flag'){
     return rows.filter(r=>{
       const f = r.override_flag;
@@ -2452,6 +2508,10 @@ function _renderDrillRows(rows){
           ?`<span>📍 ${_esc(r.current_provice_name_th)}</span>`:''}
         ${r.ncb_profile && r.ncb_profile!=='—'
           ?`<span>NCB: ${_esc(r.ncb_profile)}</span>`:''}
+        ${r.app_dev==='1'||r.app_dev==='2'
+          ?`<span>📲 ${r.app_dev==='1'?'Sfast':'S Phone'}</span>`:''}
+        ${r.maker==='dlr'
+          ?`<span class="cm-pill cm-dlr">ดีลเลอร์ทำเคส</span>`:''}
       </div>
     </div>`;
   }).join('');
@@ -2894,6 +2954,69 @@ function renderCharts(d){
 }
 
 /* ── MAIN RENDER ── */
+/* ── ผู้ทำเคส: พนักงาน EA vs ดีลเลอร์ / Sfast vs S Phone ─────────────
+   ใช้ field: r.app_dev ('1'=Sfast, '2'=S Phone, ''=ไม่มีข้อมูล — เริ่ม 17/07/2026)
+             r.maker   ('emp'=อยู่ในฐานข้อมูลพนักงาน, 'dlr'=ดีลเลอร์)
+   ภาพรวม = ตารางรายทีม · เลือกทีมในฟิลเตอร์ = ตารางรายคน */
+function renderCaseMaker(rows, teamFiltered){
+  const el=document.getElementById('cmTable'), kel=document.getElementById('cmKpis');
+  if(!el||!kel) return;
+  /* เฉพาะแถวที่มีข้อมูลแอป + จำแนกได้ (ทีม EA เท่านั้น — maker ว่าง = ทีมนอก EA) */
+  const cm=rows.filter(r=>(r.app_dev==='1'||r.app_dev==='2')&&(r.maker==='emp'||r.maker==='dlr'));
+  const head=document.getElementById('cmHead');
+  const ttl=document.getElementById('cmTitle');
+  if(!cm.length){
+    kel.innerHTML='';
+    el.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:14px">ไม่มีข้อมูลแอปทำเคสในช่วงที่เลือก (AppFromDevice เริ่มบันทึก 17/07/2026)</td></tr>';
+    return;
+  }
+  let es=0,ep=0,ds=0,dp=0;
+  cm.forEach(r=>{ if(r.maker==='dlr'){ if(r.app_dev==='1')ds++; else dp++; }
+                  else               { if(r.app_dev==='1')es++; else ep++; } });
+  const tot=cm.length, emp=es+ep, dlr=ds+dp, sf=es+ds, sp=ep+dp;
+  const pc=v=>(v/tot*100).toFixed(1)+'%';
+  kel.innerHTML=[
+    ['เคสที่มีข้อมูลแอป',fmtInt(tot),'','navy'],
+    ['พนักงาน EA ทำเคส',fmtInt(emp),pc(emp),'green'],
+    ['ดีลเลอร์ทำเคส',fmtInt(dlr),pc(dlr),'orange'],
+    ['ผ่าน Sfast',fmtInt(sf),pc(sf),'blue'],
+    ['ผ่าน S Phone',fmtInt(sp),pc(sp),'purple'],
+  ].map(([l,v,s,c])=>`<div class="cm-kpi ${c}"><div class="l">${l}</div><div class="v">${v}${s?` <span class="cm-sub">(${s})</span>`:''}</div></div>`).join('');
+  const byPerson=!!teamFiltered;
+  if(ttl) ttl.textContent=byPerson
+    ? `ผู้ทำเคสรายคน — ${state.team||''} (Sfast / S Phone)`
+    : 'ผู้ทำเคส — พนักงาน EA vs ดีลเลอร์ (Sfast / S Phone)';
+  if(head&&head.firstElementChild) head.firstElementChild.textContent=byPerson?'ผู้ทำเคส':'Team';
+  const g=groupBy(cm,
+    r=>byPerson?((r.app_mkt_fullname&&r.app_mkt_fullname!=='—')?r.app_mkt_fullname:r.marketing_fullname):r.team_short,
+    (k,rs)=>{
+      const a=[0,0,0,0];
+      rs.forEach(r=>{a[(r.maker==='dlr'?2:0)+(r.app_dev==='1'?0:1)]++;});
+      return {key:k,a,tot:rs.length,dlr:a[2]+a[3],maker:rs[0].maker};
+    }).sort((x,y)=>y.tot-x.tot);
+  /* เซลล์คลิกได้ → เปิด Customer Drill ดูรายละเอียดเคส */
+  const APP_LB={'1':'Sfast','2':'S Phone'};
+  const MK_LB={'emp':'พนักงาน EA','dlr':'ดีลเลอร์'};
+  const mode=byPerson?'p':'t';
+  const cell=(v,r,maker,app)=>{
+    if(!v) return '<span style="color:#C4CBD8">—</span>';
+    const sub=[MK_LB[maker]||'',APP_LB[app]||''].filter(Boolean).join(' · ');
+    return `<span class="apps-clickable" data-field="_cm"
+      data-value="${mode}¦${_esc(r.key)}¦${maker}¦${app}"
+      data-title="${_esc(r.key)}" data-subtitle="ผู้ทำเคส${sub?' — '+sub:''} (ตั้งแต่ 17/07/2026)">${fmtInt(v)}</span>`;
+  };
+  el.innerHTML=g.map(r=>{
+    const pct=r.tot?r.dlr/r.tot*100:0;
+    const nm=byPerson
+      ? `${r.key} <span class="cm-pill ${r.maker==='dlr'?'cm-dlr':'cm-emp'}">${r.maker==='dlr'?'ดีลเลอร์':'พนักงาน'}</span>`
+      : r.key;
+    return `<tr><td>${nm}</td><td class="num"><b>${cell(r.tot,r,'','')}</b></td>
+      <td class="num cm-e">${cell(r.a[0],r,'emp','1')}</td><td class="num cm-e">${cell(r.a[1],r,'emp','2')}</td>
+      <td class="num cm-d">${cell(r.a[2],r,'dlr','1')}</td><td class="num cm-d">${cell(r.a[3],r,'dlr','2')}</td>
+      <td class="num ${pct>=15?'cm-d':''}">${pct.toFixed(1)}%</td></tr>`;
+  }).join('');
+}
+
 function render(){
   const rows = getFiltered();
   const k    = agg(rows);
@@ -2919,7 +3042,8 @@ function render(){
   const dateSet = new Set(rows.filter(r=>r._date && r._date!=='').map(r=>r._date));
   const n_days  = Math.max(dateSet.size, 1);
   const avgPerDay = k.apps / n_days;
-  const uniqueMkt  = new Set(rows.filter(r=>!r.is_leader_as_mkt).map(r=>r.marketing_fullname)).size;
+  /* จำนวนคน: เฉพาะพนักงาน EA — ไม่นับดีลเลอร์ทำเคส */
+  const uniqueMkt  = new Set(rows.filter(r=>!r.is_leader_as_mkt && r.maker!=='dlr').map(r=>r.marketing_fullname)).size;
   const targetApps = 20*Math.max(uniqueMkt,1);
   const achievePct = k.apps/targetApps*100;
   const achieveClr = achievePct>=100?'green':achievePct>=80?'gold':'red';
@@ -2962,7 +3086,8 @@ function render(){
     : groupBy(rows,r=>r.dealer_name_en, (k,rs)=>({key:k,...agg(rs)}))
         .filter(d=>d.key&&d.key!=='—').sort((a,b)=>b.apps-a.apps);
   const dealer = dealerAll;
-  const mktRows =rows.filter(r=>!r.is_leader_as_mkt);
+  /* รายคน (Top/Bottom, Productivity, drill รายทีม): เฉพาะพนักงาน EA — ไม่รวมดีลเลอร์ทำเคส */
+  const mktRows =rows.filter(r=>!r.is_leader_as_mkt && r.maker!=='dlr');
   /* เมื่อเลือกทีม → drill เข้า Marketing รายคน (ใช้ rows ที่ผ่าน getFiltered แล้ว
      ไม่ต้อง filter team ซ้ำ เพราะ getFiltered ใช้ team_name_en||team_short เทียบแล้ว) */
   const teamFiltered = !!state.team;
@@ -2972,11 +3097,14 @@ function render(){
     : [];
   // Fallback: รวมหัวหน้าทีมที่อาจถูกตัดด้วย is_leader_as_mkt
   const mktInTeamFull = teamFiltered && !mktInTeam.length
-    ? groupBy(rows.filter(r=>r.marketing_fullname && r.marketing_fullname!=='—'),
+    ? groupBy(rows.filter(r=>r.marketing_fullname && r.marketing_fullname!=='—' && r.maker!=='dlr'),
         r=>r.marketing_fullname,(k,rs)=>({key:k,...agg(rs)})).sort((a,b)=>b.apps-a.apps)
     : [];
   const mktSrc = mktInTeam.length ? mktInTeam : mktInTeamFull;
   const inTeamMode = teamFiltered && mktSrc.length>0;
+
+  /* ผู้ทำเคส — พนักงาน EA vs ดีลเลอร์ / Sfast vs S Phone */
+  renderCaseMaker(rows, teamFiltered);
   const mkAll   =groupBy(mktRows,r=>r.marketing_fullname,(k,rs)=>({key:k,team:rs[0].team_short,pos:rs[0].app_mkt_position||'',...agg(rs)}));
   /* จำนวนแถว Top/Bottom: 10 บรรทัดเสมอ (ทั้งมุมมองรวมและกรองทีมเดียว) */
   const MK_LIMIT = 10;
