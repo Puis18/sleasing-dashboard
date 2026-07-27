@@ -336,15 +336,19 @@ header{
 .cm-kpi.navy .v{color:var(--navy);} .cm-kpi.green .v{color:var(--green);}
 .cm-kpi.orange .v{color:#C46A1B;} .cm-kpi.blue .v{color:var(--blue);}
 .cm-kpi.purple .v{color:#6B4FA0;} .cm-kpi.grey .v{color:#6B7A90;}
+.cm-kpi.teal .v{color:#12736E;}
 .cm-sub{font-size:11px;font-weight:600;color:var(--muted);}
-.cm-e{color:var(--green);} .cm-d{color:#C46A1B;font-weight:600;} .cm-u{color:#6B7A90;}
+.cm-e{color:var(--green);} .cm-d{color:#C46A1B;font-weight:600;}
+.cm-m{color:#12736E;} .cm-u{color:#6B7A90;}
 .cm-pill{display:inline-block;font-size:9.5px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:4px;}
 .cm-emp{background:var(--green-light);color:var(--green);}
 .cm-dlr{background:#FBEEDD;color:#C46A1B;}
+.cm-mc{background:#DEF2F1;color:#12736E;}
 .cm-unk{background:#EEF1F5;color:#6B7A90;}
 .cm-note{font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.7;}
 .cm-e .apps-clickable{color:var(--green);text-decoration-color:rgba(26,122,79,.45);}
 .cm-d .apps-clickable{color:#C46A1B;text-decoration-color:rgba(196,106,27,.45);}
+.cm-m .apps-clickable{color:#12736E;text-decoration-color:rgba(18,115,110,.45);}
 .cm-u .apps-clickable{color:#6B7A90;text-decoration-color:rgba(107,122,144,.45);}
 
 /* ── SECTION TITLES ── */
@@ -891,14 +895,17 @@ body.drill-open{overflow:hidden;}
           <th>Team</th><th class="num">เคสรวม</th>
           <th class="num">พนักงาน·Sfast</th><th class="num">พนักงาน·S Phone</th>
           <th class="num">ดีลเลอร์·Sfast</th><th class="num">ดีลเลอร์·S Phone</th>
+          <th class="num">MC·Sfast</th><th class="num">MC·S Phone</th>
           <th class="num">ไม่ระบุ·Sfast</th><th class="num">ไม่ระบุ·S Phone</th>
           <th class="num">% ดีลเลอร์</th>
         </tr></thead>
         <tbody id="cmTable"></tbody>
       </table></div>
       <div class="cm-note">นับทุกทีม · แอปทำเคสอ้างอิงคอลัมน์ AppFromDevice (1 = Sfast, 2 = S Phone) — เคสที่ไม่มีข้อมูลแอปถือเป็น Sfast ·
-        พนักงาน EA = ชื่อผู้ทำเคสอยู่ใน ฐานข้อมูลพนักงาน.xlsx · ดีลเลอร์ = ไม่พบชื่อในฐานข้อมูล ·
-        ไม่ระบุ = ทีมนอก EA (ไม่มีฐานข้อมูลพนักงานให้เทียบ จึงจำแนกไม่ได้)
+        พนักงาน EA = ชื่อผู้ทำเคสอยู่ใน ฐานข้อมูลพนักงาน.xlsx <b>หรือทำเคสผ่าน Sfast</b> (Sfast เป็นแอปของพนักงาน) ·
+        ดีลเลอร์ = ไม่พบชื่อในฐานข้อมูล และทำเคสผ่าน S Phone เท่านั้น ·
+        ทีม MC = ทีมที่ไม่อยู่ใน RM1–4 (ไม่มีฐานข้อมูลพนักงานให้เทียบ) ·
+        ไม่ระบุ = ทีม EA ที่ไม่มีชื่อผู้ทำเคสในระบบ
         (ผลงานยังนับให้ทีมตามเดิม ไม่ตัดยอด — แต่จำนวนคน/Productivity นับเฉพาะพนักงาน EA) ·
         เลือกทีมในฟิลเตอร์เพื่อดูรายคน · คลิกตัวเลขเพื่อดูรายละเอียดเคส</div>
     </div>
@@ -2415,7 +2422,7 @@ function _drillScopeRows(scope){
 function _drillFilter(rows, field, value){
   /* ผู้ทำเคส (EA vs ดีลเลอร์ vs ไม่ระบุ / Sfast vs S Phone)
      value = mode¦key¦maker¦app
-     mode: t=ทีม, p=รายคน · maker: emp/dlr/unk (ว่าง = ทั้งหมด) · app ว่าง = ทั้งหมด */
+     mode: t=ทีม, p=รายคน · maker: emp/dlr/mc/unk (ว่าง = ทั้งหมด) · app ว่าง = ทั้งหมด */
   if(field === '_cm'){
     const [mode,key,maker,app] = value.split('¦');
     return rows.filter(r=>{
@@ -2425,7 +2432,7 @@ function _drillFilter(rows, field, value){
         if(nm!==key) return false;
       }else if(r.team_short!==key) return false;
       if(maker){
-        const mk = (r.maker==='emp'||r.maker==='dlr') ? r.maker : 'unk';
+        const mk = (r.maker==='emp'||r.maker==='dlr'||r.maker==='mc') ? r.maker : 'unk';
         if(mk!==maker) return false;
       }
       if(app && r.app_dev!==app) return false;
@@ -2975,23 +2982,27 @@ function renderCaseMaker(rows, teamFiltered){
   const ttl=document.getElementById('cmTitle');
   if(!cm.length){
     kel.innerHTML='';
-    el.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:14px">ไม่มีข้อมูลแอปทำเคสในช่วงที่เลือก</td></tr>';
+    el.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:14px">ไม่มีข้อมูลแอปทำเคสในช่วงที่เลือก</td></tr>';
     return;
   }
-  let es=0,ep=0,ds=0,dp=0,us=0,up=0;
+  let es=0,ep=0,ds=0,dp=0,ms=0,mp=0,us=0,up=0;
   cm.forEach(r=>{ if(r.maker==='dlr'){ if(r.app_dev==='1')ds++; else dp++; }
                   else if(r.maker==='emp'){ if(r.app_dev==='1')es++; else ep++; }
+                  else if(r.maker==='mc'){ if(r.app_dev==='1')ms++; else mp++; }
                   else { if(r.app_dev==='1')us++; else up++; } });
-  const tot=cm.length, emp=es+ep, dlr=ds+dp, unk=us+up, sf=es+ds+us, sp=ep+dp+up;
+  const tot=cm.length, emp=es+ep, dlr=ds+dp, mc=ms+mp, unk=us+up,
+        sf=es+ds+ms+us, sp=ep+dp+mp+up;
   const pc=v=>(v/tot*100).toFixed(1)+'%';
-  kel.innerHTML=[
+  const kpis=[
     ['เคสที่มีข้อมูลแอป',fmtInt(tot),'','navy'],
     ['พนักงาน EA ทำเคส',fmtInt(emp),pc(emp),'green'],
     ['ดีลเลอร์ทำเคส',fmtInt(dlr),pc(dlr),'orange'],
-    ['ไม่ระบุ (นอก EA)',fmtInt(unk),pc(unk),'grey'],
-    ['ผ่าน Sfast',fmtInt(sf),pc(sf),'blue'],
-    ['ผ่าน S Phone',fmtInt(sp),pc(sp),'purple'],
-  ].map(([l,v,s,c])=>`<div class="cm-kpi ${c}"><div class="l">${l}</div><div class="v">${v}${s?` <span class="cm-sub">(${s})</span>`:''}</div></div>`).join('');
+    ['ทีม MC ทำเคส',fmtInt(mc),pc(mc),'teal'],
+  ];
+  if(unk) kpis.push(['ไม่ระบุ',fmtInt(unk),pc(unk),'grey']);
+  kpis.push(['ผ่าน Sfast',fmtInt(sf),pc(sf),'blue'],
+            ['ผ่าน S Phone',fmtInt(sp),pc(sp),'purple']);
+  kel.innerHTML=kpis.map(([l,v,s,c])=>`<div class="cm-kpi ${c}"><div class="l">${l}</div><div class="v">${v}${s?` <span class="cm-sub">(${s})</span>`:''}</div></div>`).join('');
   const byPerson=!!teamFiltered;
   if(ttl) ttl.textContent=byPerson
     ? `ผู้ทำเคสรายคน — ${state.team||''} (Sfast / S Phone)`
@@ -3000,17 +3011,17 @@ function renderCaseMaker(rows, teamFiltered){
   const g=groupBy(cm,
     r=>byPerson?((r.app_mkt_fullname&&r.app_mkt_fullname!=='—')?r.app_mkt_fullname:r.marketing_fullname):r.team_short,
     (k,rs)=>{
-      /* a = [emp·Sfast, emp·SPhone, dlr·Sfast, dlr·SPhone, unk·Sfast, unk·SPhone] */
-      const a=[0,0,0,0,0,0];
+      /* a = [emp·Sf, emp·SP, dlr·Sf, dlr·SP, mc·Sf, mc·SP, unk·Sf, unk·SP] */
+      const a=[0,0,0,0,0,0,0,0];
       rs.forEach(r=>{
-        const b=r.maker==='dlr'?2:(r.maker==='emp'?0:4);
+        const b=r.maker==='emp'?0:(r.maker==='dlr'?2:(r.maker==='mc'?4:6));
         a[b+(r.app_dev==='1'?0:1)]++;
       });
       return {key:k,a,tot:rs.length,dlr:a[2]+a[3],maker:rs[0].maker};
     }).sort((x,y)=>y.tot-x.tot);
   /* เซลล์คลิกได้ → เปิด Customer Drill ดูรายละเอียดเคส */
   const APP_LB={'1':'Sfast','2':'S Phone'};
-  const MK_LB={'emp':'พนักงาน EA','dlr':'ดีลเลอร์','unk':'ไม่ระบุ'};
+  const MK_LB={'emp':'พนักงาน EA','dlr':'ดีลเลอร์','mc':'ทีม MC','unk':'ไม่ระบุ'};
   const mode=byPerson?'p':'t';
   const cell=(v,r,maker,app)=>{
     if(!v) return '<span style="color:#C4CBD8">—</span>';
@@ -3021,13 +3032,15 @@ function renderCaseMaker(rows, teamFiltered){
   };
   el.innerHTML=g.map(r=>{
     const pct=r.tot?r.dlr/r.tot*100:0;
-    const MK_PILL={'dlr':['cm-dlr','ดีลเลอร์'],'emp':['cm-emp','พนักงาน'],'':['cm-unk','ไม่ระบุ']};
+    const MK_PILL={'dlr':['cm-dlr','ดีลเลอร์'],'emp':['cm-emp','พนักงาน'],
+                   'mc':['cm-mc','ทีม MC'],'':['cm-unk','ไม่ระบุ']};
     const p=MK_PILL[r.maker]||MK_PILL[''];
     const nm=byPerson?`${r.key} <span class="cm-pill ${p[0]}">${p[1]}</span>`:r.key;
     return `<tr><td>${nm}</td><td class="num"><b>${cell(r.tot,r,'','')}</b></td>
       <td class="num cm-e">${cell(r.a[0],r,'emp','1')}</td><td class="num cm-e">${cell(r.a[1],r,'emp','2')}</td>
       <td class="num cm-d">${cell(r.a[2],r,'dlr','1')}</td><td class="num cm-d">${cell(r.a[3],r,'dlr','2')}</td>
-      <td class="num cm-u">${cell(r.a[4],r,'unk','1')}</td><td class="num cm-u">${cell(r.a[5],r,'unk','2')}</td>
+      <td class="num cm-m">${cell(r.a[4],r,'mc','1')}</td><td class="num cm-m">${cell(r.a[5],r,'mc','2')}</td>
+      <td class="num cm-u">${cell(r.a[6],r,'unk','1')}</td><td class="num cm-u">${cell(r.a[7],r,'unk','2')}</td>
       <td class="num ${pct>=15?'cm-d':''}">${pct.toFixed(1)}%</td></tr>`;
   }).join('');
 }
