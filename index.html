@@ -2266,11 +2266,16 @@ document.addEventListener('input', e=>{
   if(id && _stState[id]){
     _stState[id].search = e.target.value;
     _stState[id]._focusSearch=true;
-    _stRender(id);
     /* หน้า Dealer: ให้ค้นหาใน "Dealer Sales" กรองข้อมูลทั้งหน้า
-       (IR / MO Condition / NCB / Approval + Daily Contract Volume) ให้สอดคล้องกัน */
+       (IR / MO Condition / NCB / Approval + Daily Contract Volume) ให้สอดคล้องกัน
+       render() เองจะเรียก smartTable('dealerTable') ซ้ำอยู่แล้ว — ถ้าเรียก _stRender(id)
+       ก่อนด้วย จะสร้าง <input> ใหม่ 2 รอบและ "กิน" flag _focusSearch ไปในรอบแรก
+       ทำให้รอบสอง (จาก render()) ไม่ focus กลับ ผู้ใช้พิมพ์ได้ทีละตัวอักษรแล้วโฟกัสหลุด
+       จึงเรียก render() แทนตรงๆ (ครั้งเดียว) เพื่อให้ flag ถูก consume ในรอบ render ล่าสุดจริงๆ */
     if(id === 'dealerTable' && typeof render === 'function'){
       render();
+    } else {
+      _stRender(id);
     }
   }
 });
