@@ -2524,6 +2524,8 @@ function _renderDrillRows(rows){
       <div class="drow-prod">📱 ${_esc(product)}</div>
       <div class="drow-fin">💰 ${fmtB(r.finance_amt||0)}${(r.protected_amt||0)>0?' · 🛡️ Premium '+fmtB(r.protected_amt):''}</div>
       <div class="drow-extra">
+        ${r.customer_phone
+          ?`<span>☎️ <a href="tel:${_esc(r.customer_phone)}" style="color:inherit;text-decoration:none;border-bottom:1px dashed currentColor">${_esc(r.customer_phone)}</a></span>`:''}
         ${dealer?`<span>🏪 ${_esc(dealer+showroom)}</span>`:''}
         ${r.marketing_fullname && r.marketing_fullname!=='—'
           ?`<span>👤 ${_esc(r.marketing_fullname)}${_mkNick(r.marketing_fullname)?' ('+_esc(_mkNick(r.marketing_fullname))+')':''}${r.team_short?' ('+_esc(r.team_short)+')':''}</span>`:''}
@@ -2570,6 +2572,7 @@ document.addEventListener('input', e=>{
   if(!q){ _renderDrillRows(_drillCache); return; }
   const filtered = _drillCache.filter(r =>
     (r.customer_name||'').toLowerCase().includes(q) ||
+    (r.customer_phone||'').toLowerCase().includes(q) ||
     (r.application_no||'').toLowerCase().includes(q) ||
     (r.contract_no||'').toLowerCase().includes(q) ||
     (r.model_name||'').toLowerCase().includes(q) ||
