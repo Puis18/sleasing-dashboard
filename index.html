@@ -747,6 +747,17 @@ body.drill-open{overflow:hidden;}
         </div>
       </div>
     </div>
+    <!-- Row 0b: Case-maker toggle (ร้านทำเคส ↔ พนักงาน CK/BK/AG ทำเคส) -->
+    <div class="fbar-section">
+      <span class="fbar-sec-label"><span class="ico">📲</span> ผู้ทำเคส</span>
+      <div class="fbar-controls fbar-scope-row">
+        <div class="fbar-scope" id="fMaker" role="group" aria-label="ผู้ทำเคส">
+          <button type="button" data-maker="" class="active">ทั้งหมด</button>
+          <button type="button" data-maker="emp">พนักงาน CK/BK/AG</button>
+          <button type="button" data-maker="dlr">ร้านทำเคส</button>
+        </div>
+      </div>
+    </div>
     <!-- Row 1: Period -->
     <div class="fbar-section">
       <span class="fbar-sec-label"><span class="ico">📅</span> ช่วงเวลา</span>
@@ -1372,7 +1383,7 @@ const pillCls = p => p>=80?'green':p>=60?'amber':'red';
 /* state.scope: 'mo' = เฉพาะ Mobile (sub_product_type 07/08)
                'ea' = ผลิตภัณฑ์ที่ไม่ใช่ MO ทั้งหมด (non-MO)
                'all'= TOTAL ทุกผลิตภัณฑ์ (default) */
-let state = {scope:'all',year:'',quarter:'',month:'',bu:'',am:'',team:'',mkt:'',dealer:'',showroom:''};
+let state = {scope:'all',maker:'',year:'',quarter:'',month:'',bu:'',am:'',team:'',mkt:'',dealer:'',showroom:''};
 let charts = {};
 
 /* ── Precompute ร้านค้า/สาขาตาม scope ── */
@@ -1399,6 +1410,19 @@ function scopePass(r){
   const isMo = r.sub_product_type_code==='07' || r.sub_product_type_code==='08';
   if(state.scope==='ea') return !isMo;
   return isMo;
+}
+
+/* makerPass: กรอง record ตาม "ผู้ทำเคส" ที่เลือก
+   ''    → ทุกเคส (default)
+   'emp' → พนักงาน CK/BK/AG ทำเคส (รวมทีม MC ที่ทำผ่าน Sfast)
+   'dlr' → ร้าน/ดีลเลอร์ทำเคส (รวมทีม MC ที่ทำผ่าน S Phone)
+   ใช้ _cmBucket() ตัวเดียวกับรายงาน "ผู้ทำเคส" เพื่อให้ตัวเลขตรงกัน
+   หมายเหตุ: เคสที่จำแนกไม่ได้ (unk) จะถูกตัดออกเมื่อเลือก emp/dlr */
+function makerPass(r){
+  if(!state.maker) return true;
+  /* ต้องมีข้อมูลแอปจึงจำแนกได้ (Sfast='1' / S Phone='2') */
+  if(!(r.app_dev==='1'||r.app_dev==='2')) return false;
+  return _cmBucket(r) === state.maker;
 }
 
 /* ── Populate dropdowns ── */
@@ -1795,12 +1819,27 @@ document.querySelectorAll('#fScope button').forEach(btn=>{
     rebuildAll(); render(); updateFbarDot();
   });
 });
+/* ผู้ทำเคส segmented toggle: ทั้งหมด / พนักงาน CK/BK/AG / ร้านทำเคส */
+document.querySelectorAll('#fMaker button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const nm = btn.dataset.maker || '';
+    if(nm===state.maker) return;
+    state.maker = nm;
+    document.querySelectorAll('#fMaker button').forEach(b=>
+      b.classList.toggle('active', (b.dataset.maker||'')===nm));
+    rebuildScopeDropdowns();
+    rebuildAll(); render(); updateFbarDot();
+    _refreshFilterHighlights();
+  });
+});
 document.getElementById('resetBtn').addEventListener('click',()=>{
   // Reset ทุกตัวกรองรวมทั้ง scope กลับไปเป็น default = 'all' (TOTAL)
-  state={scope:'all',year:'',quarter:'',month:'',bu:'',am:'',team:'',mkt:'',dealer:'',showroom:''};
+  state={scope:'all',maker:'',year:'',quarter:'',month:'',bu:'',am:'',team:'',mkt:'',dealer:'',showroom:''};
   [fYear,fQuarter,fMonth,fBU,fAM,fTeam,fMkt,fDealer,fShowroom].forEach(s=>s.value='');
   document.querySelectorAll('#fScope button').forEach(b=>
     b.classList.toggle('active', b.dataset.scope==='all'));
+  document.querySelectorAll('#fMaker button').forEach(b=>
+    b.classList.toggle('active', !b.dataset.maker));
   rebuildScopeDropdowns();
   rebuildAll(); render(); updateFbarDot();
   _refreshFilterHighlights();
@@ -1914,6 +1953,7 @@ function amMatch(r){
 function filteredFor(skipKey){
   return ALL.filter(r=>{
     if(!scopePass(r))                                                                  return false;
+    if(!makerPass(r))                                                                  return false;
     if(skipKey!=='bu'      && state.bu       && !buMatch(r))                          return false;
     if(skipKey!=='am'      && state.am       && !amMatch(r))                          return false;
     if(skipKey!=='year'    && state.year     && r._year     !==state.year)            return false;
@@ -1959,6 +1999,7 @@ function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
    อ้างอิงช่วงข้อมูลจาก RM ทั้งหมด (ทุก records ในปีนั้น) กรองเฉพาะ BU/RM/period/mkt/dealer/showroom */
 function filteredForTeam(){
   return ALL.filter(r=>{
+    if(!makerPass(r))                                         return false;
     if(state.bu      && !buMatch(r))                          return false;
     if(state.year    && r._year    !==state.year)             return false;
     if(state.quarter && r._quarter !==state.quarter)          return false;
@@ -2010,6 +2051,7 @@ function rebuildDealer(){rebuildAll();}
 function getFiltered(){
   return ALL.filter(r=>{
     if(!scopePass(r))                                    return false;
+    if(!makerPass(r))                                    return false;
     if(state.bu     &&!buMatch(r))                       return false;
     if(state.am     &&!amMatch(r))                       return false;
     if(state.year   &&r._year!==state.year)              return false;
@@ -2682,6 +2724,8 @@ function renderCharts(d){
   // ── Section title update ──
   // สร้างป้ายบอก context ของตัวกรองที่กำลังใช้ (ทุกตัวยกเว้น scope)
   const _ctxParts = [];
+  if(state.maker==='emp')      _ctxParts.push('พนักงาน CK/BK/AG ทำเคส');
+  else if(state.maker==='dlr') _ctxParts.push('ร้านทำเคส');
   if(state.bu)       _ctxParts.push(state.bu);
   if(state.am)       _ctxParts.push(state.am);
   if(state.year)     _ctxParts.push(state.year);
@@ -3064,6 +3108,8 @@ function render(){
   const tags=[];
   if(state.scope==='all') tags.push('ขอบเขต: TOTAL');
   else if(state.scope==='ea') tags.push('ขอบเขต: EA');
+  if(state.maker==='emp') tags.push('ผู้ทำเคส: พนักงาน CK/BK/AG');
+  else if(state.maker==='dlr') tags.push('ผู้ทำเคส: ร้านทำเคส');
   if(state.bu)      tags.push(`BU: ${state.bu}`);
   if(state.am)      tags.push(`RM: ${state.am}`);
   if(state.year)    tags.push(`ปี: ${state.year}`);
