@@ -3480,17 +3480,15 @@ function renderDealerMaker(){
       ${numTd(a.shops)}${numTd(a.ppl)}${attTd(a.attach)}</tr>`;
   };
   const out=[];
-  const amKeys=[...tree.keys()].sort((x,y)=>{
-    const ax=_dmAgg([].concat(...[...tree.get(x).values()].map(m=>[].concat(...m.values())))).dlr;
-    const ay=_dmAgg([].concat(...[...tree.get(y).values()].map(m=>[].concat(...m.values())))).dlr;
-    return ay-ax;});
+  /* เรียงตามลำดับโครงสร้าง AM1 → AM4 (ไม่เรียงตามยอด) */
+  const amKeys=[...tree.keys()].sort((x,y)=>String(x).localeCompare(String(y)));
   amKeys.forEach(am=>{
     const hubMap=tree.get(am);
     const amRows=[].concat(...[...hubMap.values()].map(m=>[].concat(...m.values())));
     out.push(line(0,am,AM_NAME[am]||am,_dmAgg(amRows),true));
     if(!_dmExpanded.has(am)) return;
-    const hubKeys=[...hubMap.keys()].sort((x,y)=>
-      _dmAgg([].concat(...hubMap.get(y).values())).dlr-_dmAgg([].concat(...hubMap.get(x).values())).dlr);
+    /* Hub เรียงตามรหัส H11 → H42 ให้ตรงกับผังโครงสร้าง */
+    const hubKeys=[...hubMap.keys()].sort((x,y)=>String(x).localeCompare(String(y)));
     hubKeys.forEach(h=>{
       const teamMap=hubMap.get(h);
       const hRows=[].concat(...teamMap.values());
