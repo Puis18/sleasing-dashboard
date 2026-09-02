@@ -1341,7 +1341,8 @@ body.drill-open{overflow:hidden;}
 
     <div class="card chart-card" style="margin-top:12px">
       <div style="font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:2px">แนวโน้มรายสัปดาห์ — % เคสที่ร้านทำเอง</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">ตั้งแต่ 17/07/2026 (ไม่ขึ้นกับตัวกรองช่วงเวลา) · แท่ง = จำนวนเคสที่ร้านทำ · เส้น = % ของเคสทั้งหมดในสัปดาห์นั้น</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">ตั้งแต่ 17/07/2026 (ไม่ขึ้นกับตัวกรองช่วงเวลา) · แท่ง = จำนวนเคสที่ร้านทำ · เส้น = % ของเคสทั้งหมดในสัปดาห์นั้น ·
+        แกนนอน = <b>วันจันทร์ต้นสัปดาห์ (วว/ดด)</b> · <b>*</b> = สัปดาห์ที่ข้อมูลไม่ครบ 7 วัน (แท่งสีอ่อน)</div>
       <div class="chart-wrap med"><canvas id="dmTrendChart"></canvas></div>
     </div>
 
@@ -2859,30 +2860,50 @@ function renderDealerMakerCharts(){
     dc('dmTrendChart');
     const trows=dmRowsBase(true);      /* ไม่ขึ้นกับตัวกรองช่วงเวลา */
     if(trows.length){
+      /* วันสุดท้ายที่มีข้อมูล — ใช้ตรวจว่าสัปดาห์ไหนยังไม่ครบ 7 วัน */
+      let lastDate='';
+      ALL.forEach(r=>{ if(r._date && r._date>lastDate) lastDate=r._date; });
+      const _p2=n=>String(n).padStart(2,'0');
+      /* ISO string จากเวลาท้องถิ่น — ห้ามใช้ toISOString() เพราะไทย UTC+7
+         จะเลื่อนวันจันทร์กลับไปเป็นวันอาทิตย์ */
+      const _iso=d=>d.getFullYear()+'-'+_p2(d.getMonth()+1)+'-'+_p2(d.getDate());
+      const _thai=s=>s.slice(8,10)+'/'+s.slice(5,7);      /* YYYY-MM-DD → DD/MM */
       const wk=new Map();
       trows.forEach(r=>{
         const dt=new Date(r._date+'T00:00:00');
         if(isNaN(dt)) return;
         const day=(dt.getDay()+6)%7;                 /* จันทร์ = 0 */
         const mon=new Date(dt); mon.setDate(dt.getDate()-day);
-        const key=mon.toISOString().slice(0,10);
-        if(!wk.has(key)) wk.set(key,{d:0,t:0});
+        const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+        const key=_iso(mon);
+        if(!wk.has(key)) wk.set(key,{d:0,t:0,end:_iso(sun)});
         const w=wk.get(key); w.t++; if(r.maker==='dlr') w.d++;
       });
       const ks=[...wk.keys()].sort();
+      /* สัปดาห์ที่ข้อมูลไม่เต็ม 7 วัน (สัปดาห์แรกเริ่ม 17/07 · สัปดาห์ล่าสุดยังไม่จบ) */
+      const partial=ks.map(k=>k<DM_START || wk.get(k).end>lastDate);
+      const labels=ks.map((k,i)=>_thai(k)+(partial[i]?' *':''));
       charts['dmTrendChart']=new Chart(tEl,{
-        data:{labels:ks.map(k=>k.slice(5).replace('-','/')),
+        data:{labels:labels,
           datasets:[
             {type:'bar',label:'เคสร้านทำ',data:ks.map(k=>wk.get(k).d),
-             backgroundColor:'#E8833C',borderRadius:3,yAxisID:'yL',order:2,maxBarThickness:26},
+             backgroundColor:ks.map((k,i)=>partial[i]?'#F0BC92':'#E8833C'),
+             borderRadius:3,yAxisID:'yL',order:2,maxBarThickness:26},
             {type:'line',label:'% ร้านทำ',data:ks.map(k=>{const w=wk.get(k);return w.t?w.d/w.t*100:0;}),
              borderColor:'#1F7A4D',backgroundColor:'#1F7A4D',borderWidth:2,tension:.3,
              pointRadius:3,yAxisID:'yR',order:1}]},
         options:{responsive:true,maintainAspectRatio:false,
           plugins:{legend:{display:true,labels:{boxWidth:12,font:{size:11}}},
-            tooltip:{callbacks:{label:c=>c.dataset.type==='line'
-              ? '% ร้านทำ: '+c.parsed.y.toFixed(1)+'%'
-              : 'เคสร้านทำ: '+fmtInt(c.parsed.y)}}},
+            tooltip:{callbacks:{
+              title:items=>{
+                const i=items[0].dataIndex, k=ks[i], w=wk.get(k);
+                const from=(k<DM_START?DM_START:k), to=(w.end>lastDate?lastDate:w.end);
+                return 'สัปดาห์ '+_thai(k)+' – '+_thai(w.end)
+                  + (partial[i]?'  (มีข้อมูล '+_thai(from)+' – '+_thai(to)+')':'');
+              },
+              label:c=>c.dataset.type==='line'
+                ? '% ร้านทำ: '+c.parsed.y.toFixed(1)+'%'
+                : 'เคสร้านทำ: '+fmtInt(c.parsed.y)+' จาก '+fmtInt(wk.get(ks[c.dataIndex]).t)+' เคส'}}},
           scales:{yL:{position:'left',beginAtZero:true,title:{display:true,text:'เคส',font:{size:10}}},
                   yR:{position:'right',beginAtZero:true,suggestedMax:60,grid:{display:false},
                       ticks:{callback:v=>v+'%'},title:{display:true,text:'% ร้านทำ',font:{size:10}}},
