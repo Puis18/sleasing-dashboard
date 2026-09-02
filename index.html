@@ -3497,8 +3497,8 @@ function renderDealerMaker(){
       const hLabel=info?`${h} · ${info.rm} (${info.nick})`:h;
       out.push(line(1,hKey,hLabel,_dmAgg(hRows),true));
       if(!_dmExpanded.has(hKey)) return;
-      const tKeys=[...teamMap.keys()].sort((x,y)=>
-        _dmAgg(teamMap.get(y)).dlr-_dmAgg(teamMap.get(x)).dlr);
+      /* ทีมเรียงตามรหัสทีม (E1101 → E1301 → …) ให้ตรงกับผังโครงสร้าง */
+      const tKeys=[...teamMap.keys()].sort((x,y)=>String(x).localeCompare(String(y)));
       tKeys.forEach(ts=>{
         const tRows=teamMap.get(ts);
         const tKey=hKey+'|'+ts;
