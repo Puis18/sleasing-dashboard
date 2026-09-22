@@ -308,7 +308,9 @@ header{
 .fbar-dropdown-item .dl-add:hover{background:#1F3864;color:#fff;border-color:#1F3864;}
 .fbar-dropdown-item.selected .dl-add{background:#16a34a;color:#fff;border-color:#16a34a;}
 .fbar-dropdown-item.selected .dl-add:hover{background:#b91c1c;border-color:#b91c1c;}
-.fbar-dropdown-hint{font-size:10.5px;color:#64748b;padding:4px 14px 6px;border-bottom:1px solid #f1f5f9;background:#f8fafc;}
+.fbar-dropdown-hint{font-size:10.5px;color:#64748b;padding:5px 14px;border-bottom:1px solid #f1f5f9;background:#f8fafc;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px;box-sizing:border-box;}
+.fbar-dropdown-hint .fbar-dropdown-clear-row{padding:2px 8px;font-size:11px;border-radius:999px;border:1px solid #fecaca;white-space:nowrap;}
 .fbar-chips{display:none;flex-wrap:wrap;gap:5px;grid-column:1 / -1;margin-top:-2px;}
 .fbar-chips.show{display:flex;}
 .fbar-chip{
@@ -1427,7 +1429,7 @@ body.drill-open{overflow:hidden;}
     const p = location.pathname;
     const base = p.endsWith('/') ? p + 'index' : p.replace(/\.html?$/, '');
     // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-    const url = base + '_data.json.gz?v=20260922114131';
+    const url = base + '_data.json.gz?v=20260922114710';
     const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
     const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
@@ -1727,10 +1729,13 @@ function _renderDealerDropdown(query){
   // Items
   let html = '';
   const selSet = new Set(dealerList());
-  if(state.dealer){
-    html += `<div class="fbar-dropdown-clear-row" data-clear="1">✕ ล้างตัวกรอง (ดูทุก Dealer${selSet.size>1?' — เลือกอยู่ '+selSet.size+' ร้าน':''})</div>`;
-  }
-  html += `<div class="fbar-dropdown-hint">คลิกชื่อ = ดูร้านเดียว · กด <b>＋ เพิ่ม</b> = เลือกหลายร้านพร้อมกัน</div>`;
+  /* แถวบนสุดมีความสูงคงที่เสมอ (hint + ปุ่มล้าง) — ไม่ให้รายการเลื่อนตำแหน่งหลังกด ＋ เพิ่ม
+     ไม่งั้นคลิกครั้งถัดไปจะไปโดนแถวผิด */
+  html += `<div class="fbar-dropdown-hint"><span>คลิกชื่อ = ดูร้านเดียว · กด <b>＋ เพิ่ม</b> = เลือกหลายร้าน</span>`
+        + (state.dealer
+            ? `<span class="fbar-dropdown-clear-row" data-clear="1">✕ ล้างตัวกรอง${selSet.size>1?' ('+selSet.size+' ร้าน)':''}</span>`
+            : '')
+        + `</div>`;
   if(!filtered.length){
     html += `<div class="fbar-dropdown-empty">— ไม่พบ Dealer ที่ตรงกับคำค้น —</div>`;
   } else {
