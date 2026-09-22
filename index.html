@@ -250,6 +250,29 @@ header{
 /* CRITICAL: my display:flex above has same specificity as the browser's
    [hidden] { display:none }, so we must override explicitly when hidden=true. */
 .fbar-dropdown[hidden]{display:none!important;}
+/* ── Month multi-select (ปุ่มหน้าตาเหมือน select + panel ติ๊กหลายเดือน) ── */
+.fbar-mselect-wrap{position:relative;width:100%;min-width:0;}
+.fbar-mselect{
+  width:100%;height:34px;padding:0 26px 0 10px;border-radius:9px;border:none;
+  background:#fff;font:inherit;font-size:12px;color:var(--navy);font-weight:600;text-align:left;
+  cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.14);
+  background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%231F3864' d='M5.5 7l4.5 4.5L14.5 7z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 7px center;background-size:14px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;
+}
+.fbar-mselect:hover{box-shadow:0 2px 5px rgba(0,0,0,.18);}
+.fbar-mselect.has-value{background-color:#fef9c3;}
+.fbar-mselect-panel{min-width:220px;max-height:420px;}
+.fbar-mselect-panel .fbar-dropdown-list{overflow:auto;}
+.fbar-mopt{
+  display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:13px;color:#0f172a;
+  cursor:pointer;border-bottom:1px solid #f1f5f9;user-select:none;
+}
+.fbar-mopt:last-child{border-bottom:none;}
+.fbar-mopt:hover{background:#dbeafe;}
+.fbar-mopt input{width:16px;height:16px;margin:0;accent-color:#1F3864;cursor:pointer;}
+.fbar-mopt.on{background:#fef9c3;font-weight:800;color:#854d0e;}
+.fbar-mopt .mo-n{margin-left:auto;font-size:11px;color:#64748b;font-weight:500;}
 .fbar-dropdown-count{
   padding:8px 12px;font-size:11px;font-weight:800;color:#1F3864;
   background:linear-gradient(180deg,#eff6ff,#dbeafe);
@@ -827,7 +850,16 @@ body.drill-open{overflow:hidden;}
       <div class="fbar-controls fbar-cols-3">
         <select id="fYear"   ><option value="">ทุกปี</option></select>
         <select id="fQuarter"><option value="">ทุกไตรมาส</option></select>
-        <select id="fMonth"  ><option value="">ทุกเดือน</option></select>
+        <!-- เดือน: เลือกได้หลายเดือน (custom multi-select) -->
+        <div class="fbar-mselect-wrap" id="fMonthWrap">
+          <button type="button" class="fbar-mselect" id="fMonthBtn" aria-haspopup="listbox" aria-expanded="false">
+            <span id="fMonthLabel">ทุกเดือน</span>
+          </button>
+          <div class="fbar-dropdown fbar-mselect-panel" id="fMonthPanel" role="listbox" aria-multiselectable="true" hidden>
+            <div class="fbar-dropdown-hint"><span>ติ๊กได้หลายเดือน</span><span class="fbar-dropdown-clear-row" id="fMonthClear">✕ ทุกเดือน</span></div>
+            <div class="fbar-dropdown-list" id="fMonthList"></div>
+          </div>
+        </div>
       </div>
     </div>
     <!-- Row 2: Team -->
@@ -1429,7 +1461,7 @@ body.drill-open{overflow:hidden;}
     const p = location.pathname;
     const base = p.endsWith('/') ? p + 'index' : p.replace(/\.html?$/, '');
     // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-    const url = base + '_data.json.gz?v=20260922114710';
+    const url = base + '_data.json.gz?v=20260922115808';
     const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
     const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
@@ -1628,14 +1660,101 @@ function makerPass(r){
 /* ── Populate dropdowns ── */
 const fBU=document.getElementById('fBU'),
       fYear=document.getElementById('fYear'),fQuarter=document.getElementById('fQuarter'),
-      fMonth=document.getElementById('fMonth'),fAM=document.getElementById('fAM'),
+      fAM=document.getElementById('fAM'),
       fHub=document.getElementById('fHub'),
       fTeam=document.getElementById('fTeam'),fMkt=document.getElementById('fMkt'),
       fDealer=document.getElementById('fDealer'),fShowroom=document.getElementById('fShowroom');
 
 (DATA.years   ||[]).forEach(y=>fYear.add(new Option(y,y)));
 (DATA.quarters||[]).forEach(q=>fQuarter.add(new Option(q,q)));
-(DATA.months  ||[]).forEach(m=>fMonth.add(new Option(MONTH_TH[m]||m,m)));
+/* ═══ เดือน: เลือกได้หลายเดือน ═══
+   state.month เป็น string: '' = ทุกเดือน, เดือนเดียว = '09', หลายเดือน = '07,08,09'
+   ทุกจุดที่กรองใช้ monthMatch(r). `fMonth` เป็น shim ให้โค้ดเดิม (value / classList) ใช้ได้ต่อ */
+const _fMonthBtn   = document.getElementById('fMonthBtn');
+const _fMonthLabel = document.getElementById('fMonthLabel');
+const _fMonthPanel = document.getElementById('fMonthPanel');
+const _fMonthList  = document.getElementById('fMonthList');
+const _fMonthWrap  = document.getElementById('fMonthWrap');
+function monthList(){ return state.month ? state.month.split(',').filter(Boolean) : []; }
+let _moSet=null, _moKey=null;
+function monthMatch(r){
+  if(!state.month) return true;
+  if(_moKey!==state.month){ _moSet=new Set(monthList()); _moKey=state.month; }
+  return _moSet.has(r._month);
+}
+function monthLabel(){
+  const l = monthList();
+  if(!l.length) return '';
+  if(l.length===1) return MONTH_TH[l[0]]||l[0];
+  const nm = l.map(m=>(MONTH_TH[m]||m));
+  // ช่วงต่อเนื่อง → "ก.ค.–ก.ย." (แสดงย่อ), ไม่ต่อเนื่อง → คั่นด้วย +
+  const nums = l.map(Number).sort((a,b)=>a-b);
+  const contiguous = nums.every((n,i)=>i===0 || n===nums[i-1]+1);
+  if(contiguous && l.length>2) return `${MONTH_TH[l[0]]||l[0]} – ${MONTH_TH[l[l.length-1]]||l[l.length-1]}`;
+  return nm.join(' + ');
+}
+const fMonth = {
+  get value(){ return state.month; },
+  set value(v){ state.month = v||''; _renderMonthCtl(); },
+  get classList(){ return _fMonthBtn.classList; },
+};
+function _renderMonthCtl(){
+  const l = monthList();
+  _fMonthLabel.textContent = l.length ? monthLabel() + (l.length>1 ? ` (${l.length} เดือน)` : '') : 'ทุกเดือน';
+  _fMonthBtn.classList.toggle('has-value', !!l.length);
+  _fMonthBtn.title = l.length ? l.map(m=>MONTH_TH[m]||m).join(', ') : 'เลือกเดือน (ติ๊กได้หลายเดือน)';
+  if(!_fMonthPanel.hidden) _renderMonthPanel();
+}
+function _renderMonthPanel(){
+  const sel = new Set(monthList());
+  _fMonthList.innerHTML = (DATA.months||[]).map(m=>
+    `<label class="fbar-mopt${sel.has(m)?' on':''}"><input type="checkbox" value="${m}" ${sel.has(m)?'checked':''}> ${_esc(MONTH_TH[m]||m)}</label>`
+  ).join('');
+}
+function _setMonths(list){
+  const uniq=[...new Set((list||[]).filter(Boolean))].sort();
+  const val=uniq.join(',');
+  if(val!==state.month){ applyFilter('month', val); }
+  _renderMonthCtl();
+}
+function _positionMonthPanel(){
+  const r=_fMonthBtn.getBoundingClientRect();
+  const vw=window.innerWidth, vh=window.innerHeight, margin=8;
+  _fMonthPanel.style.left='-9999px'; _fMonthPanel.style.top='0px';
+  const pw=Math.min(_fMonthPanel.offsetWidth, vw-margin*2);
+  let left=Math.max(margin, Math.min(r.left, vw-pw-margin));
+  let top=r.bottom+4;
+  const maxH=Math.max(160, Math.min(420, vh-top-margin));
+  if(vh-top < 200){ top = Math.max(margin, r.top-4-Math.min(420,_fMonthPanel.offsetHeight)); }
+  _fMonthPanel.style.left=left+'px'; _fMonthPanel.style.top=top+'px'; _fMonthPanel.style.maxHeight=maxH+'px';
+}
+function _openMonthPanel(){
+  if(!_fMonthPanel.hidden) return;
+  _renderMonthPanel();
+  _fMonthPanel.hidden=false; _fMonthBtn.setAttribute('aria-expanded','true');
+  _positionMonthPanel();
+}
+function _closeMonthPanel(){
+  if(_fMonthPanel.hidden) return;
+  _fMonthPanel.hidden=true; _fMonthBtn.setAttribute('aria-expanded','false');
+}
+_fMonthBtn.addEventListener('click', ()=>{ _fMonthPanel.hidden ? _openMonthPanel() : _closeMonthPanel(); });
+_fMonthList.addEventListener('change', e=>{
+  const cb=e.target.closest('input[type=checkbox]'); if(!cb) return;
+  const l=monthList(); const i=l.indexOf(cb.value);
+  if(cb.checked && i<0) l.push(cb.value); else if(!cb.checked && i>=0) l.splice(i,1);
+  _setMonths(l);
+});
+document.getElementById('fMonthClear').addEventListener('click', ()=>{ _setMonths([]); });
+document.addEventListener('mousedown', e=>{
+  if(_fMonthPanel.hidden) return;
+  if(_fMonthWrap.contains(e.target) || _fMonthPanel.contains(e.target)) return;
+  _closeMonthPanel();
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !_fMonthPanel.hidden) _closeMonthPanel(); });
+window.addEventListener('resize', ()=>{ if(!_fMonthPanel.hidden) _positionMonthPanel(); });
+window.addEventListener('scroll', ()=>{ if(!_fMonthPanel.hidden) _positionMonthPanel(); }, {passive:true});
+_renderMonthCtl();
 // MC managers (non-EA region managers) — เพิ่มต่อท้าย RM1-4 ในดรอปดาวน์ RM
 // RM dropdown — rebuildRM() จะถูกเรียกจาก rebuildAll() ตอนท้าย (หลัง function define แล้ว)
 DATA.teams.forEach(t=>fTeam.add(new Option(teamDisplayLabel(t), t)));
@@ -1927,7 +2046,7 @@ function applyFilter(key, val){
 fBU.addEventListener('change',      e=>applyFilter('bu',      e.target.value));
 fYear.addEventListener('change',    e=>applyFilter('year',    e.target.value));
 fQuarter.addEventListener('change', e=>applyFilter('quarter', e.target.value));
-fMonth.addEventListener('change',   e=>applyFilter('month',   e.target.value));
+/* fMonth (หลายเดือน) มี handler ของตัวเองด้านบน */
 fAM.addEventListener('change',      e=>applyFilter('am',      e.target.value));
 if(fHub) fHub.addEventListener('change', e=>applyFilter('hub', e.target.value));
 fTeam.addEventListener('change',    e=>applyFilter('team',    e.target.value));
@@ -2175,7 +2294,7 @@ function _loadXLSX(){
 function _xlsFileLabel(){
   const _dls = dealerList().map(_dlShort);
   const dl = _dls.length ? (_dls.length<=3 ? _dls.join('+') : _dls.length+'ร้าน') : (state.showroom||'ตามตัวกรอง');
-  const per = [state.year, state.quarter, state.month].filter(Boolean).join('-') || 'ทั้งหมด';
+  const per = [state.year, state.quarter, monthList().length ? (monthList().length>1 ? monthList()[0]+'-'+monthList()[monthList().length-1] : state.month) : ''].filter(Boolean).join('-') || 'ทั้งหมด';
   return `รายสัญญา_${dl}_${per}`.replace(/[\\/:*?"<>|]/g,'_').replace(/\s+/g,' ').trim();
 }
 function _csvDownload(rows, name){
@@ -2238,7 +2357,7 @@ async function exportFilteredExcel(){
         ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')],
         ['Dealer', state.dealer ? dealerList().join(', ') : 'ทุกร้าน (ตามตัวกรอง)'],
         ['Showroom', state.showroom||'ทั้งหมด'],
-        ['ปี / ไตรมาส / เดือน', [state.year||'ทั้งหมด', state.quarter||'-', state.month||'-'].join(' / ')],
+        ['ปี / ไตรมาส / เดือน', [state.year||'ทั้งหมด', state.quarter||'-', state.month ? monthList().map(m=>MONTH_TH[m]||m).join(', ') : '-'].join(' / ')],
         ['Scope', state.scope||'all'],
         ['ทีม', state.team||'ทั้งหมด'],
         ['จำนวนสัญญา', rows.length],
@@ -2380,7 +2499,7 @@ function filteredFor(skipKey){
     if(skipKey!=='hub'     && state.hub      && !hubMatch(r))                         return false;
     if(skipKey!=='year'    && state.year     && r._year     !==state.year)            return false;
     if(skipKey!=='quarter' && state.quarter  && r._quarter  !==state.quarter)         return false;
-    if(skipKey!=='month'   && state.month    && r._month    !==state.month)           return false;
+    if(skipKey!=='month'   && !monthMatch(r))                                          return false;
     if(skipKey!=='team'    && state.team     && (r.team_name_en||r.team_short||'')!==state.team) return false;
     if(skipKey!=='mkt'     && state.mkt      && r.marketing_fullname!==state.mkt)     return false;
     if(skipKey!=='dealer'  && !dealerMatch(r))                                        return false;
@@ -2459,7 +2578,7 @@ function filteredForTeam(){
     if(state.bu      && !buMatch(r))                          return false;
     if(state.year    && r._year    !==state.year)             return false;
     if(state.quarter && r._quarter !==state.quarter)          return false;
-    if(state.month   && r._month   !==state.month)            return false;
+    if(!monthMatch(r))                                        return false;
     if(state.mkt     && r.marketing_fullname!==state.mkt)     return false;
     if(!dealerMatch(r))                                        return false;
     if(state.showroom&& r.showroom_name_en!==state.showroom)  return false;
@@ -2519,7 +2638,7 @@ function getFiltered(){
     if(state.hub    &&!hubMatch(r))                      return false;
     if(state.year   &&r._year!==state.year)              return false;
     if(state.quarter&&r._quarter!==state.quarter)        return false;
-    if(state.month  &&r._month!==state.month)            return false;
+    if(!monthMatch(r))                                   return false;
     if(state.team   &&(r.team_name_en||r.team_short||'')!==state.team) return false;
     if(state.mkt    &&r.marketing_fullname!==state.mkt)  return false;
     if(!dealerMatch(r))                                     return false;
@@ -3303,7 +3422,7 @@ function renderCharts(d){
   if(state.hub)      _ctxParts.push(state.hub+(HUB_INFO[state.hub]?' '+HUB_INFO[state.hub].rm:''));
   if(state.year)     _ctxParts.push(state.year);
   if(state.quarter)  _ctxParts.push(state.quarter);
-  if(state.month)    _ctxParts.push(MONTH_TH[state.month]||state.month);
+  if(state.month)    _ctxParts.push(monthLabel());
   if(state.team)     _ctxParts.push(state.team);
   if(state.mkt)      _ctxParts.push(state.mkt);
   if(state.dealer)   _ctxParts.push(dealerLabel());
@@ -3700,7 +3819,7 @@ function dmRowsBase(ignorePeriod){
     if(!ignorePeriod){
       if(state.year    && r._year   !==state.year)        return false;
       if(state.quarter && r._quarter!==state.quarter)     return false;
-      if(state.month   && r._month  !==state.month)       return false;
+      if(!monthMatch(r))                                  return false;
     }
     if(state.team    && (r.team_name_en||r.team_short||'')!==state.team) return false;
     if(state.mkt     && r.marketing_fullname!==state.mkt) return false;
@@ -3889,7 +4008,7 @@ function render(){
   if(state.hub)     tags.push(`Hub RM: ${state.hub}${HUB_INFO[state.hub]?' · '+HUB_INFO[state.hub].rm:''}`);
   if(state.year)    tags.push(`ปี: ${state.year}`);
   if(state.quarter) tags.push(`ไตรมาส: ${state.quarter}`);
-  if(state.month)   tags.push(`เดือน: ${MONTH_TH[state.month]||state.month}`);
+  if(state.month)   tags.push(`เดือน: ${monthLabel()}`);
   if(state.team)    tags.push(`Team: ${state.team}`);
   if(state.mkt)     tags.push(`Mkt: ${state.mkt}`);
   if(state.dealer)   tags.push(`Dealer: ${dealerLabel()}`);
