@@ -189,6 +189,19 @@ header{
 }
 .fbar-reset:hover{background:rgba(255,255,255,.32);}
 .fbar-reset:active{transform:scale(.97);}
+.fbar-reset:disabled{opacity:.6;cursor:wait;}
+/* ── ปุ่มส่งออก Excel แบบ inline (ในหน้า Dealer) ── */
+.xls-export-inline{
+  margin-left:auto;font:inherit;font-size:11.5px;font-weight:700;
+  padding:0 12px;height:30px;border-radius:999px;cursor:pointer;
+  background:#1D6F42;color:#fff;border:1px solid #1D6F42;
+  display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
+  box-shadow:0 1px 3px rgba(0,0,0,.14);transition:background .15s ease, transform .1s ease;
+}
+.xls-export-inline:hover{background:#185C37;}
+.xls-export-inline:active{transform:scale(.97);}
+.xls-export-inline:disabled{opacity:.6;cursor:wait;}
+.xls-export-inline #exportXlsDealerHint{font-weight:500;opacity:.9;}
 .fbar-search-wrap{position:relative;display:flex;width:100%;min-width:0;}
 .fbar-search-input{
   flex:1 1 auto;width:100%;height:34px;
@@ -836,6 +849,10 @@ body.drill-open{overflow:hidden;}
     </div>
     <!-- Footer: Reset action -->
     <div class="fbar-section fbar-section-foot">
+      <button class="fbar-reset xls-export-btn" id="exportXlsBtn"
+              title="ส่งออกรายการสัญญาตามตัวกรองปัจจุบัน (เลือก Dealer ก่อนเพื่อดึงเฉพาะร้านนั้น)">
+        <span aria-hidden="true">📥</span> ส่งออก Excel รายสัญญา
+      </button>
       <button class="fbar-reset" id="resetBtn">
         <span aria-hidden="true">↺</span> ล้างตัวกรองทั้งหมด
       </button>
@@ -1034,7 +1051,13 @@ body.drill-open{overflow:hidden;}
   <div class="page" id="p3">
 
     <!-- ── Dealer + Chart side by side on wide screens ── -->
-    <div class="section-title"><span class="bar"></span>🏪 <span id="dealerSectionTitle">Dealer Sales</span></div>
+    <div class="section-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="bar"></span>🏪 <span id="dealerSectionTitle">Dealer Sales</span>
+      <button type="button" class="xls-export-btn xls-export-inline" id="exportXlsBtnDealer"
+              title="ส่งออกรายการสัญญาของ Dealer ที่เลือกไว้ในตัวกรอง (ถ้ายังไม่เลือก จะส่งออกทุกร้านตามตัวกรอง)">
+        📥 ส่งออก Excel รายสัญญา<span id="exportXlsDealerHint"></span>
+      </button>
+    </div>
     <div class="stack dealer-stack">
       <div class="card">
         <div id="dealerCtrl"></div>
@@ -1996,6 +2019,140 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
   rebuildAll(); render(); updateFbarDot();
   _refreshFilterHighlights();
 });
+
+/* ═══════════════════════════════════════════════════════════════
+   ส่งออก Excel รายสัญญา (ตามตัวกรองปัจจุบัน — ใช้กับ Dealer เป็นหลัก)
+   • ใช้ getFiltered() → เคารพทุกตัวกรอง (scope/ปี/เดือน/ทีม/Dealer/Showroom)
+   • โหลด SheetJS จาก CDN ตอนกดปุ่มเท่านั้น (ไม่เพิ่มน้ำหนักหน้า)
+   • ถ้าโหลดไม่ได้ (ออฟไลน์) → fallback เป็น CSV (UTF-8 BOM เปิดใน Excel ได้)
+   • ไม่ส่งออกเบอร์โทรลูกค้า (ข้อมูลส่วนบุคคล — ไฟล์นี้ส่งให้ร้านค้า)
+   ═══════════════════════════════════════════════════════════════ */
+const XLS_COLS = [
+  ['วันที่สัญญา',        r=>r._date||'',                                    12],
+  ['เลขที่สัญญา',        r=>r.contract_no||'',                              18],
+  ['เลขที่ใบสมัคร',      r=>r.application_no||'',                           18],
+  ['ชื่อลูกค้า',          r=>r.customer_name||'',                            26],
+  ['Dealer',            r=>String(r.dealer_name_en||'').replace(/\s*\((No )?VAT\)$/,''), 28],
+  ['VAT',               r=>/\(VAT\)$/.test(r.dealer_name_en||'')?'VAT':(/\(No VAT\)$/.test(r.dealer_name_en||'')?'No VAT':''), 8],
+  ['Showroom',          r=>r.showroom_name_en||'',                         28],
+  ['ยี่ห้อ',             r=>r.brand_name||'',                               12],
+  ['รุ่นสินค้า',          r=>r.model_name||'',                               26],
+  ['เงื่อนไข/สภาพสินค้า', r=>r.condition_name||'',                           20],
+  ['ราคาสินค้า',          r=>+r.car_amt||0,                                  13],
+  ['เงินดาวน์',           r=>+r.down_amt||0,                                 12],
+  ['ยอดจัด (Finance)',    r=>+r.finance_amt||0,                              14],
+  ['ยอดสัญญา',            r=>+r.contract_amt||0,                             13],
+  ['จำนวนงวด',            r=>+r.term||0,                                     9],
+  ['ค่างวด',              r=>+r.installment_amt||0,                          11],
+  ['ดอกเบี้ย %',          r=>+r.interest_rate||0,                            10],
+  ['ประกัน (Mobile Care)', r=>+r.protected_amt||0,                           14],
+  ['เซลส์/ผู้ทำเคส',       r=>r.marketing_fullname||'',                       22],
+  ['ทีม',                r=>r.team_name_en||'',                             26],
+  ['จังหวัดลูกค้า',        r=>r.current_provice_name_th||'',                  14],
+];
+const XLS_MONEY_HDRS = new Set(['ราคาสินค้า','เงินดาวน์','ยอดจัด (Finance)','ยอดสัญญา','ค่างวด','ประกัน (Mobile Care)']);
+
+function _loadXLSX(){
+  if(window.XLSX) return Promise.resolve(window.XLSX);
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload=()=>window.XLSX?res(window.XLSX):rej(new Error('XLSX missing'));
+    s.onerror=()=>rej(new Error('load fail'));
+    document.head.appendChild(s);
+  });
+}
+function _xlsFileLabel(){
+  const dl = state.dealer ? state.dealer.replace(/\s*\((No )?VAT\)$/,'') : (state.showroom||'ตามตัวกรอง');
+  const per = [state.year, state.quarter, state.month].filter(Boolean).join('-') || 'ทั้งหมด';
+  return `รายสัญญา_${dl}_${per}`.replace(/[\\/:*?"<>|]/g,'_').replace(/\s+/g,' ').trim();
+}
+function _csvDownload(rows, name){
+  const esc=v=>{ v=(v==null?'':String(v)); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  const lines=[XLS_COLS.map(c=>esc(c[0])).join(',')];
+  rows.forEach(r=>lines.push(XLS_COLS.map(c=>esc(c[1](r))).join(',')));
+  const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name+'.csv';
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);
+}
+async function exportFilteredExcel(){
+  const rows = getFiltered();
+  if(!rows.length){ alert('ไม่มีรายการสัญญาตามตัวกรองปัจจุบัน'); return; }
+  if(!state.dealer && !state.showroom && rows.length>20000){
+    if(!confirm(`ยังไม่ได้เลือก Dealer — จะส่งออกทั้งหมด ${rows.length.toLocaleString()} สัญญา\nต้องการดำเนินการต่อหรือไม่?`)) return;
+  }
+  const btns=[...document.querySelectorAll('.xls-export-btn')];
+  btns.forEach(b=>{ b.disabled=true; b.dataset.t=b.innerHTML; b.innerHTML='⏳ กำลังสร้างไฟล์…'; });
+  try{
+    const sorted = rows.slice().sort((a,b)=>{
+      const d=(a._date||'').localeCompare(b._date||''); if(d) return d;
+      return String(a.contract_no||'').localeCompare(String(b.contract_no||''));
+    });
+    const data = sorted.map(r=>{ const o={}; for(const c of XLS_COLS) o[c[0]]=c[1](r); return o; });
+    // สรุปตาม Dealer
+    const sm={};
+    rows.forEach(r=>{
+      const k=String(r.dealer_name_en||'—');
+      const s=sm[k]||(sm[k]={'Dealer':k.replace(/\s*\((No )?VAT\)$/,''),'จำนวนสัญญา':0,'ราคาสินค้ารวม':0,'เงินดาวน์รวม':0,'ยอดจัดรวม (Finance)':0,'ยอดสัญญารวม':0,'ประกันรวม':0});
+      s['จำนวนสัญญา']++; s['ราคาสินค้ารวม']+=+r.car_amt||0; s['เงินดาวน์รวม']+=+r.down_amt||0;
+      s['ยอดจัดรวม (Finance)']+=+r.finance_amt||0; s['ยอดสัญญารวม']+=+r.contract_amt||0; s['ประกันรวม']+=+r.protected_amt||0;
+    });
+    const summary=Object.values(sm).sort((a,b)=>b['จำนวนสัญญา']-a['จำนวนสัญญา']);
+    const tot={'Dealer':'รวมทั้งหมด','จำนวนสัญญา':0,'ราคาสินค้ารวม':0,'เงินดาวน์รวม':0,'ยอดจัดรวม (Finance)':0,'ยอดสัญญารวม':0,'ประกันรวม':0};
+    summary.forEach(s=>{ for(const k in tot){ if(k!=='Dealer') tot[k]+=s[k]; } });
+    summary.push(tot);
+    const fname=_xlsFileLabel();
+    let XLSX=null; try{ XLSX=await _loadXLSX(); }catch(e){ console.warn('SheetJS load failed → CSV fallback', e); }
+    if(XLSX){
+      const wb=XLSX.utils.book_new();
+      const ws=XLSX.utils.json_to_sheet(data);
+      ws['!cols']=XLS_COLS.map(c=>({wch:c[2]||14}));
+      ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:data.length,c:XLS_COLS.length-1}})};
+      ws['!freeze']={xSplit:0,ySplit:1};
+      // number format ให้คอลัมน์เงิน
+      const ref=XLSX.utils.decode_range(ws['!ref']);
+      XLS_COLS.forEach((c,ci)=>{
+        if(!XLS_MONEY_HDRS.has(c[0])) return;
+        for(let ri=1;ri<=ref.e.r;ri++){ const cell=ws[XLSX.utils.encode_cell({r:ri,c:ci})]; if(cell&&typeof cell.v==='number') cell.z='#,##0'; }
+      });
+      XLSX.utils.book_append_sheet(wb,ws,'รายสัญญา');
+      const ws2=XLSX.utils.json_to_sheet(summary);
+      ws2['!cols']=[{wch:34},{wch:12},{wch:16},{wch:16},{wch:18},{wch:16},{wch:14}];
+      const ref2=XLSX.utils.decode_range(ws2['!ref']);
+      for(let ri=1;ri<=ref2.e.r;ri++) for(let ci=2;ci<=6;ci++){ const cell=ws2[XLSX.utils.encode_cell({r:ri,c:ci})]; if(cell&&typeof cell.v==='number') cell.z='#,##0'; }
+      XLSX.utils.book_append_sheet(wb,ws2,'สรุปตาม Dealer');
+      // แผ่นเงื่อนไขการดึงข้อมูล
+      const meta=[
+        ['รายงาน','รายสัญญาที่ทำสินเชื่อแล้ว (จาก Daily Dashboard)'],
+        ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')],
+        ['Dealer', state.dealer||'ทุกร้าน (ตามตัวกรอง)'],
+        ['Showroom', state.showroom||'ทั้งหมด'],
+        ['ปี / ไตรมาส / เดือน', [state.year||'ทั้งหมด', state.quarter||'-', state.month||'-'].join(' / ')],
+        ['Scope', state.scope||'all'],
+        ['ทีม', state.team||'ทั้งหมด'],
+        ['จำนวนสัญญา', rows.length],
+        ['หมายเหตุ','ยอดในไฟล์นี้อ้างอิงข้อมูล ณ วันที่สร้างแดชบอร์ด — ใช้เพื่อกระทบยอด/ตรวจสอบเบื้องต้น'],
+      ];
+      const ws3=XLSX.utils.aoa_to_sheet(meta); ws3['!cols']=[{wch:22},{wch:60}];
+      XLSX.utils.book_append_sheet(wb,ws3,'เงื่อนไข');
+      XLSX.writeFile(wb, fname+'.xlsx');
+    } else {
+      _csvDownload(sorted, fname);
+      alert('โหลดไลบรารี Excel ไม่ได้ (อาจไม่มีอินเทอร์เน็ต) — ส่งออกเป็น CSV แทน ซึ่งเปิดใน Excel ได้เช่นกัน');
+    }
+  } catch(e){
+    console.error(e); alert('ส่งออกไม่สำเร็จ: '+(e&&e.message||e));
+  } finally {
+    btns.forEach(b=>{ b.disabled=false; if(b.dataset.t) b.innerHTML=b.dataset.t; });
+    _updateExportHint();
+  }
+}
+function _updateExportHint(){
+  const h=document.getElementById('exportXlsDealerHint'); if(!h) return;
+  const dl = state.dealer ? state.dealer.replace(/\s*\((No )?VAT\)$/,'') : '';
+  h.textContent = dl ? ` · ${dl.length>28?dl.slice(0,27)+'…':dl}` : ' · (ทุกร้านตามตัวกรอง)';
+}
+document.querySelectorAll('.xls-export-btn').forEach(b=>b.addEventListener('click', exportFilteredExcel));
 
 /* ── Filter bar toggle ── */
 const _fbarPanel = document.getElementById('fbarPanel');
@@ -3623,6 +3780,7 @@ function render(){
   if(state.showroom) tags.push(`Showroom: ${state.showroom}`);
   document.getElementById('fbarStatus').textContent=
     `📌 ${fmtInt(rows.length)} / ${fmtInt(ALL.length)} apps`+(tags.length?' · '+tags.join(' · '):'');
+  if(typeof _updateExportHint==='function') _updateExportHint();
 
   const dateSet = new Set(rows.filter(r=>r._date && r._date!=='').map(r=>r._date));
   const n_days  = Math.max(dateSet.size, 1);
