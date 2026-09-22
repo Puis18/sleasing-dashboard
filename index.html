@@ -1427,7 +1427,7 @@ body.drill-open{overflow:hidden;}
     const p = location.pathname;
     const base = p.endsWith('/') ? p + 'index' : p.replace(/\.html?$/, '');
     // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-    const url = base + '_data.json.gz?v=20260922113814';
+    const url = base + '_data.json.gz?v=20260922114131';
     const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
     const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
@@ -1711,7 +1711,7 @@ function _updateDealerClearVisibility(){
   if(!_fDealerWrap) return;
   _renderDealerChips();
   _fDealerWrap.classList.toggle('show-clear', !!fDealer.value);
-  fDealer.classList.toggle('has-value', !!fDealer.value);
+  fDealer.classList.toggle('has-value', !!fDealer.value || !!state.dealer);
 }
 function _renderDealerDropdown(query){
   const q = (query||'').trim().toLowerCase();
@@ -1936,7 +1936,7 @@ let _dealerIdleTimer  = null;
 let _dealerMoveHandler = null;
 const _DEALER_PAD = 8;            // forgiveness zone around input/panel
 const _DEALER_CLOSE_DELAY = 100;  // ms after cursor leaves zone
-const _DEALER_IDLE_MS     = 4000; // ms of total inactivity → auto-close
+const _DEALER_IDLE_MS     = 8000; // ms of total inactivity → auto-close (เพิ่มจาก 4s เพื่อให้เวลาเลือกหลายร้าน)
 function _cancelDealerClose(){
   if(_dealerCloseTimer){ clearTimeout(_dealerCloseTimer); _dealerCloseTimer = null; }
 }
@@ -2035,10 +2035,13 @@ _fDealerListBox.addEventListener('mousedown', e=>{
   if(tg){
     e.preventDefault(); e.stopPropagation();
     _cancelDealerClose && _cancelDealerClose();
+    const q = fDealer.value;           // คงคำค้นไว้ให้เลือกร้านอื่นในผลค้นหาเดิมต่อได้
     _toggleDealer(tg.dataset.toggle || '');
-    fDealer.value=''; // ล้างคำค้นเพื่อพิมพ์หาร้านถัดไป
+    fDealer.value = q;
     _updateDealerClearVisibility();
-    _renderDealerDropdown('');
+    if(_fDealerPanel.hidden) _openDealerDropdown();
+    _renderDealerDropdown(q);
+    _resetDealerIdle();
     fDealer.focus();
     return;
   }
