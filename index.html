@@ -449,6 +449,14 @@ header{
 .vat-mrow .r{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;}
 #vatGrpBody tr.vat-drill{cursor:pointer;} #vatGrpBody tr.vat-drill:hover td{background:#F3F6FB;}
 .vat-mix-wrap{max-height:420px;overflow:auto;}
+.vat-crumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;margin:0 0 8px;}
+.vat-crumb:empty{display:none;}
+.vat-crumb .vc-back{border:1px solid var(--border);background:#fff;border-radius:8px;padding:3px 10px;
+  font-size:11.5px;font-weight:700;color:var(--navy);cursor:pointer;font-family:inherit;}
+.vat-crumb .vc-back:hover{background:#F3F6FB;}
+.vat-crumb .vc-lnk{color:var(--blue);cursor:pointer;text-decoration:underline;text-decoration-color:rgba(44,111,191,.35);}
+.vat-crumb .vc-cur{font-weight:700;color:var(--navy);}
+.vat-crumb .vc-sep{color:var(--muted);}
 .vat-shop-link{color:var(--blue);cursor:pointer;text-decoration:underline;text-decoration-color:rgba(44,111,191,.35);}
 .cm-e .apps-clickable{color:var(--green);text-decoration-color:rgba(26,122,79,.45);}
 .cm-d .apps-clickable{color:#C46A1B;text-decoration-color:rgba(196,106,27,.45);}
@@ -1177,6 +1185,7 @@ body.drill-open{overflow:hidden;}
         <span class="vat-leg"><span class="vat-pill vat-v">VAT</span><span class="vat-pill vat-n">No VAT</span></span></div>
       <div id="vatMonth"></div>
       <div class="vat-sub" id="vatGrpTitle">แยกตาม AM</div>
+      <div class="vat-crumb" id="vatCrumb"></div>
       <div class="table-wrap"><table>
         <thead><tr>
           <th id="vatGrpHdr">กลุ่ม</th>
@@ -1531,7 +1540,7 @@ body.drill-open{overflow:hidden;}
     const p = location.pathname;
     const base = p.endsWith('/') ? p + 'index' : p.replace(/\.html?$/, '');
     // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-    const url = base + '_data.json.gz?v=20260923132002';
+    const url = base + '_data.json.gz?v=20260923132645';
     const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
     const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
@@ -4188,6 +4197,28 @@ function renderVat(rows){
     }; drill='am';
   }
   document.getElementById('vatGrpTitle').textContent = `แยกตาม ${lvl}`;
+  /* ── Breadcrumb: ทั้งหมด › AM › Hub › ทีม — คลิกเพื่อย้อนกลับชั้นบน ── */
+  {
+    const crumbs=[{up:'root', label:'ทั้งหมด'}];
+    if(state.am){
+      const op=[...fAM.options].find(o=>o.value===state.am);
+      crumbs.push({up:'am', label: op?op.textContent:(AM_LABEL[state.am]||state.am)});
+    }
+    if(state.hub){
+      const h=HUB_INFO[state.hub];
+      crumbs.push({up:'hub', label: h?`${state.hub} · ${h.rm} (${h.nick})`:state.hub});
+    }
+    if(state.team) crumbs.push({up:'team', label: teamDisplayLabel(state.team)||state.team});
+    const el=document.getElementById('vatCrumb');
+    if(crumbs.length<2){ el.innerHTML=''; }
+    else {
+      const parent=crumbs[crumbs.length-2];
+      el.innerHTML = `<button type="button" class="vc-back" data-up="${parent.up}" title="กลับไป ${_esc(parent.label)}">← ย้อนกลับ</button>`
+        + crumbs.map((c,i)=> i===crumbs.length-1
+            ? `<span class="vc-cur">${_esc(c.label)}</span>`
+            : `<span class="vc-lnk" data-up="${c.up}">${_esc(c.label)}</span><span class="vc-sep">›</span>`).join('');
+    }
+  }
   document.getElementById('vatGrpHdr').textContent = hdr;
   const gm=new Map();
   tagged.forEach(r=>{
@@ -4248,6 +4279,18 @@ function renderVat(rows){
 /* คลิกแถว → เจาะลงชั้นถัดไป · คลิกชื่อร้านผสม → กรองเฉพาะร้านนั้น */
 document.getElementById('vatGrpBody')?.addEventListener('click',e=>{
   const tr=e.target.closest('tr.vat-drill'); if(tr) _vatDrill(tr.dataset.f, tr.dataset.k);
+});
+/* Breadcrumb: ย้อนกลับไปชั้นที่คลิก — ล้างตัวกรองที่อยู่ต่ำกว่าชั้นนั้น
+   (applyFilter('am') ล้าง hub+team ให้เอง, applyFilter('hub') ล้าง team ให้เอง) */
+function _vatGoUp(level){
+  if(level==='root'){ fAM.value=''; applyFilter('am',''); }
+  else if(level==='am'){ if(fHub) fHub.value=''; applyFilter('hub',''); if(state.team){ fTeam.value=''; applyFilter('team',''); } }
+  else if(level==='hub'){ fTeam.value=''; applyFilter('team',''); }
+  const t=document.getElementById('vatGrpTitle');
+  if(t && t.scrollIntoView) t.scrollIntoView({block:'nearest'});
+}
+document.getElementById('vatCrumb')?.addEventListener('click',e=>{
+  const c=e.target.closest('[data-up]'); if(c) _vatGoUp(c.dataset.up);
 });
 document.getElementById('vatMixBody')?.addEventListener('click',e=>{
   const s=e.target.closest('[data-shop]'); if(s) _setDealers([s.dataset.shop]);
