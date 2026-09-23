@@ -430,6 +430,26 @@ header{
 .cm-mc{background:#DEF2F1;color:#12736E;}
 .cm-unk{background:#EEF1F5;color:#6B7A90;}
 .cm-note{font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.7;}
+/* ── ร้าน VAT vs No VAT ── */
+.vat-cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;}
+.vat-side{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:#FBFCFE;}
+.vat-side.v{border-top:3px solid var(--green);} .vat-side.n{border-top:3px solid #6B4FA0;}
+.vat-side-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:11.5px;color:var(--muted);}
+.vat-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+.vat-kpi{background:#fff;border:1px solid #E5EAF1;border-radius:8px;padding:6px 10px;}
+.vat-kpi .l{font-size:10.5px;color:var(--muted);} .vat-kpi .v{font-size:16px;font-weight:800;color:var(--navy);}
+.vat-kpi .s{font-size:10px;color:var(--muted);}
+.vat-pill{display:inline-block;font-size:10px;font-weight:700;padding:1px 8px;border-radius:10px;margin-left:4px;}
+.vat-v{background:var(--green-light);color:var(--green);} .vat-n{background:#EFEAF7;color:#6B4FA0;}
+.vat-sub{font-size:12px;font-weight:700;color:var(--navy);margin:14px 0 6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.vat-leg{margin-left:auto;font-weight:400;}
+.vat-mrow{display:grid;grid-template-columns:52px minmax(0,1fr) 120px;align-items:center;gap:8px;font-size:11px;margin:3px 0;}
+.vat-bar{display:flex;height:14px;border-radius:4px;overflow:hidden;background:#EEF1F5;}
+.vat-bar .bv{background:var(--green);} .vat-bar .bn{background:#8E77C2;}
+.vat-mrow .r{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;}
+#vatGrpBody tr.vat-drill{cursor:pointer;} #vatGrpBody tr.vat-drill:hover td{background:#F3F6FB;}
+.vat-mix-wrap{max-height:420px;overflow:auto;}
+.vat-shop-link{color:var(--blue);cursor:pointer;text-decoration:underline;text-decoration-color:rgba(44,111,191,.35);}
 .cm-e .apps-clickable{color:var(--green);text-decoration-color:rgba(26,122,79,.45);}
 .cm-d .apps-clickable{color:#C46A1B;text-decoration-color:rgba(196,106,27,.45);}
 .cm-m .apps-clickable{color:#12736E;text-decoration-color:rgba(18,115,110,.45);}
@@ -844,6 +864,17 @@ body.drill-open{overflow:hidden;}
         </div>
       </div>
     </div>
+    <!-- Row 0c: ประเภทร้าน (VAT / No VAT) — อ้างอิงป้ายระดับร้านที่ต่อท้ายชื่อ Dealer -->
+    <div class="fbar-section">
+      <span class="fbar-sec-label"><span class="ico">🧾</span> ประเภทร้าน</span>
+      <div class="fbar-controls fbar-scope-row">
+        <div class="fbar-scope" id="fVat" role="group" aria-label="ประเภทร้าน VAT / No VAT">
+          <button type="button" data-vat="" class="active">ทั้งหมด</button>
+          <button type="button" data-vat="vat">ร้าน VAT</button>
+          <button type="button" data-vat="nov">ร้าน No VAT</button>
+        </div>
+      </div>
+    </div>
     <!-- Row 1: Period -->
     <div class="fbar-section">
       <span class="fbar-sec-label"><span class="ico">📅</span> ช่วงเวลา</span>
@@ -1134,6 +1165,45 @@ body.drill-open{overflow:hidden;}
         <div style="font-size:10.5px;color:var(--muted);margin-bottom:8px">จำนวนเคสและยอด Finance รายวัน</div>
         <div class="chart-wrap med"><canvas id="dailyVolumeChartD"></canvas></div>
       </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── ร้าน VAT vs No VAT ── -->
+    <div class="section-title"><span class="bar"></span>🧾 ร้าน VAT vs No VAT</div>
+    <div class="card">
+      <div id="vatCmp" class="vat-cmp"></div>
+      <div class="vat-sub">สัดส่วนสัญญารายเดือน
+        <span class="vat-leg"><span class="vat-pill vat-v">VAT</span><span class="vat-pill vat-n">No VAT</span></span></div>
+      <div id="vatMonth"></div>
+      <div class="vat-sub" id="vatGrpTitle">แยกตาม AM</div>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th id="vatGrpHdr">กลุ่ม</th>
+          <th class="num">ร้าน VAT</th><th class="num">ร้าน No VAT</th>
+          <th class="num">สัญญา VAT</th><th class="num">สัญญา No VAT</th>
+          <th class="num">% No VAT</th><th class="num">ยอดจัด No VAT</th>
+        </tr></thead>
+        <tbody id="vatGrpBody"></tbody>
+      </table></div>
+      <div class="cm-note">ประเภทร้านคิดที่ระดับร้าน จากคอลัมน์ car_amt_vat (มีค่า &gt; 0 = VAT) —
+        ร้านที่มีเคสทั้งสองแบบใช้ "ข้างมาก" · ดาวน์ % = เงินดาวน์ ÷ ราคาสินค้า ·
+        ตัวเลขทั้งหมดเป็นไปตามตัวกรองด้านบน · คลิกแถวเพื่อเจาะลงไปชั้นถัดไป</div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="vat-sub" style="margin-top:0">⚠️ ร้านผสม — มีทั้งเคส VAT และเคส No VAT (ไว้ตรวจสอบป้ายประเภทร้าน)</div>
+      <div id="vatMixSum" class="cm-note" style="margin:0 0 8px"></div>
+      <div class="table-wrap vat-mix-wrap"><table>
+        <thead><tr>
+          <th>ร้านค้า</th><th>ป้ายที่ใช้</th><th>ทีม</th>
+          <th class="num">เคส VAT</th><th class="num">เคส No VAT</th>
+          <th class="num">% ข้างน้อย</th><th class="num">เคสล่าสุด</th>
+        </tr></thead>
+        <tbody id="vatMixBody"></tbody>
+      </table></div>
+      <div class="cm-note">เรียงจากจำนวนเคสข้างน้อยมากไปน้อย — ร้านที่ % ข้างน้อยสูง (ใกล้ 50%) ควรตรวจสอบก่อน ·
+        คลิกชื่อร้านเพื่อกรองดูเฉพาะร้านนั้น</div>
     </div>
 
     <div class="divider"></div>
@@ -1461,7 +1531,7 @@ body.drill-open{overflow:hidden;}
     const p = location.pathname;
     const base = p.endsWith('/') ? p + 'index' : p.replace(/\.html?$/, '');
     // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-    const url = base + '_data.json.gz?v=20260923091215';
+    const url = base + '_data.json.gz?v=20260923132002';
     const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
     const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
@@ -1615,7 +1685,7 @@ const pillCls = p => p>=80?'green':p>=60?'amber':'red';
 /* state.scope: 'mo' = เฉพาะ Mobile (sub_product_type 07/08)
                'ea' = ผลิตภัณฑ์ที่ไม่ใช่ MO ทั้งหมด (non-MO)
                'all'= TOTAL ทุกผลิตภัณฑ์ (default) */
-let state = {scope:'all',maker:'',year:'',quarter:'',month:'',bu:'',am:'',hub:'',team:'',mkt:'',dealer:'',showroom:''};
+let state = {scope:'all',maker:'',vat:'',year:'',quarter:'',month:'',bu:'',am:'',hub:'',team:'',mkt:'',dealer:'',showroom:''};
 let charts = {};
 
 /* ── Precompute ร้านค้า/สาขาตาม scope ── */
@@ -1650,7 +1720,22 @@ function scopePass(r){
    'dlr' → ร้าน/ดีลเลอร์ทำเคส (รวมทีม MC ที่ทำผ่าน S Phone)
    ใช้ _cmBucket() ตัวเดียวกับรายงาน "ผู้ทำเคส" เพื่อให้ตัวเลขตรงกัน
    หมายเหตุ: เคสที่จำแนกไม่ได้ (unk) จะถูกตัดออกเมื่อเลือก emp/dlr */
+/* ── ประเภทร้าน VAT / No VAT ──
+   r._sv = ป้ายระดับร้าน (จากชื่อ Dealer ที่ต่อท้าย "(VAT)" / "(No VAT)")
+           'V' = ร้าน VAT, 'N' = ร้าน No VAT, '' = ไม่ระบุร้าน
+   r._cv = ป้ายรายเคส จาก car_amt_vat (1 = เคส VAT, 0 = เคส No VAT)
+   ตัวกรองใช้ป้าย "ระดับร้าน" เพื่อให้ยอดของแต่ละร้านไม่แตกกระจาย */
+ALL.forEach(r=>{
+  const d = r.dealer_name_en || '';
+  r._sv = /\(VAT\)$/.test(d) ? 'V' : (/\(No VAT\)$/.test(d) ? 'N' : '');
+});
+function vatPass(r){
+  if(!state.vat) return true;
+  return state.vat==='vat' ? r._sv==='V' : r._sv==='N';
+}
 function makerPass(r){
+  /* ประเภทร้าน (VAT/No VAT) ตรวจที่นี่ด้วย — makerPass ถูกเรียกในทุกฟังก์ชันกรองหลัก */
+  if(!vatPass(r)) return false;
   if(!state.maker) return true;
   /* ต้องมีข้อมูลแอปจึงจำแนกได้ (Sfast='1' / S Phone='2') */
   if(!(r.app_dev==='1'||r.app_dev==='2')) return false;
@@ -1995,11 +2080,14 @@ function _selectDealer(value){
 function rebuildScopeDropdowns(){
   const curD = state.dealer, curS = state.showroom;
   // Dealer (datalist for searchable input)
-  const dealers = state.scope==='all'
+  let dealers = state.scope==='all'
     ? (DATA.dealers||[])
     : state.scope==='ea'
       ? (DATA.dealers||[]).filter(d=>EA_DEALERS.has(d))
       : (DATA.dealers||[]).filter(d=>MO_DEALERS.has(d));
+  /* ประเภทร้าน: เหลือเฉพาะร้าน VAT หรือ No VAT ตามที่เลือก */
+  if(state.vat==='vat')      dealers = dealers.filter(d=>/\(VAT\)$/.test(d));
+  else if(state.vat==='nov') dealers = dealers.filter(d=>/\(No VAT\)$/.test(d));
   _fillDealerDatalist(dealers);
   {
     // คงไว้เฉพาะร้านที่ยังอยู่ใน scope ใหม่ (รองรับเลือกหลายร้าน)
@@ -2236,14 +2324,29 @@ document.querySelectorAll('#fMaker button').forEach(btn=>{
     _refreshFilterHighlights();
   });
 });
+/* ประเภทร้าน segmented toggle: ทั้งหมด / ร้าน VAT / ร้าน No VAT */
+document.querySelectorAll('#fVat button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const v = btn.dataset.vat || '';
+    if(v===state.vat) return;
+    state.vat = v;
+    document.querySelectorAll('#fVat button').forEach(b=>
+      b.classList.toggle('active', (b.dataset.vat||'')===v));
+    rebuildScopeDropdowns();   // dealer list เหลือเฉพาะร้านประเภทที่เลือก
+    rebuildAll(); render(); updateFbarDot();
+    _refreshFilterHighlights();
+  });
+});
 document.getElementById('resetBtn').addEventListener('click',()=>{
   // Reset ทุกตัวกรองรวมทั้ง scope กลับไปเป็น default = 'all' (TOTAL)
-  state={scope:'all',maker:'',year:'',quarter:'',month:'',bu:'',am:'',hub:'',team:'',mkt:'',dealer:'',showroom:''};
+  state={scope:'all',maker:'',vat:'',year:'',quarter:'',month:'',bu:'',am:'',hub:'',team:'',mkt:'',dealer:'',showroom:''};
   [fYear,fQuarter,fMonth,fBU,fAM,fHub,fTeam,fMkt,fDealer,fShowroom].forEach(s=>{ if(s) s.value=''; });
   document.querySelectorAll('#fScope button').forEach(b=>
     b.classList.toggle('active', b.dataset.scope==='all'));
   document.querySelectorAll('#fMaker button').forEach(b=>
     b.classList.toggle('active', !b.dataset.maker));
+  document.querySelectorAll('#fVat button').forEach(b=>
+    b.classList.toggle('active', !b.dataset.vat));
   rebuildScopeDropdowns();
   rebuildAll(); render(); updateFbarDot();
   _refreshFilterHighlights();
@@ -3812,6 +3915,7 @@ function _dmMaker(r){
 function dmRowsBase(ignorePeriod){
   return ALL.filter(r=>{
     if(!scopePass(r))                                     return false;
+    if(!vatPass(r))                                       return false;
     if(!r._date || r._date < DM_START)                    return false;
     if(!isRMTeam(r.team_short||''))                       return false;
     if(state.am      && !amMatch(r))                      return false;
@@ -3991,8 +4095,167 @@ document.addEventListener('click', e=>{
   renderDealerMaker();
 });
 
+/* ═══════════════════════════════════════════════════════════════
+   ร้าน VAT vs No VAT (หน้า Dealer)
+   • เปรียบเทียบ 2 ฝั่งตามป้ายระดับร้าน r._sv ('V' / 'N')
+   • สัดส่วนรายเดือน · ตารางแยกกลุ่มตามชั้นตัวกรอง (AM → Hub → ทีม → CK/BK/AG)
+   • ร้านผสม: ร้านที่มีทั้งเคส VAT และ No VAT (ดูจาก r._cv รายเคส)
+   ═══════════════════════════════════════════════════════════════ */
+const _VAT_MON = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function _vatMonLabel(y,m){
+  const yy = String((parseInt(y,10)||0)+543).slice(-2);
+  return `${_VAT_MON[parseInt(m,10)]||m} ${yy}`;
+}
+function _vatStats(rs){
+  const shops=new Set(); let fin=0, car=0, down=0, used=0, mo=0, ins=0;
+  rs.forEach(r=>{
+    if(r.dealer_name_en && r.dealer_name_en!=='—') shops.add(r.dealer_name_en);
+    fin+=r.finance_amt||0; car+=r.car_amt||0; down+=r.down_amt||0;
+    if(r.sub_product_type_name==='มือถือมือสอง') used++;
+    const isMo=(r.sub_product_type_code==='07'||r.sub_product_type_code==='08');
+    if(isMo){ mo++; if((r.protected_amt||0)>0) ins++; }
+  });
+  const n=rs.length;
+  return {n, shops:shops.size, fin, avgFin:n?fin/n:0, perShop:shops.size?n/shops.size:0,
+          downPct:car?down/car*100:0, usedPct:n?used/n*100:0, attach:mo?ins/mo*100:0};
+}
+function _vatDrill(field,key){
+  const el = {am:fAM, hub:fHub, team:fTeam}[field];
+  if(!el) return;
+  el.value = key;
+  if(el.value===key) applyFilter(field,key);
+}
+function renderVat(rows){
+  const cmpEl=document.getElementById('vatCmp');
+  if(!cmpEl) return;
+  const tagged = rows.filter(r=>r._sv);
+  const vR = tagged.filter(r=>r._sv==='V'), nR = tagged.filter(r=>r._sv==='N');
+  const V=_vatStats(vR), N=_vatStats(nR);
+  const totN=V.n+N.n, totF=V.fin+N.fin;
+  const shareN = (a,b)=> b ? fmtPct(a/b*100) : '—';
+  const side = (cls,label,S,shareApps,shareFin)=>{
+    const empty = !S.n;
+    const kp = (l,v,s)=>`<div class="vat-kpi"><div class="l">${l}</div><div class="v">${empty?'—':v}</div>${s&&!empty?`<div class="s">${s}</div>`:''}</div>`;
+    return `<div class="vat-side ${cls}">
+      <div class="vat-side-hd"><span class="vat-pill vat-${cls}" style="margin-left:0">${label}</span>
+        <span>${fmtInt(S.shops)} ร้าน</span></div>
+      <div class="vat-kpis">
+        ${kp('สัญญา', fmtInt(S.n), `${shareApps} ของทั้งหมด`)}
+        ${kp('ยอดจัด (Finance)', fmtBM(S.fin), `${shareFin} ของทั้งหมด`)}
+        ${kp('ยอดจัด / สัญญา', fmtB(S.avgFin))}
+        ${kp('สัญญา / ร้าน', S.perShop.toFixed(1))}
+        ${kp('ดาวน์ % ราคาสินค้า', fmtPct(S.downPct))}
+        ${kp('% มือถือมือสอง', fmtPct(S.usedPct))}
+        ${kp('%Mobile Care', fmtPct(S.attach))}
+      </div></div>`;
+  };
+  cmpEl.innerHTML = side('v','ร้าน VAT',V,shareN(V.n,totN),shareN(V.fin,totF))
+                  + side('n','ร้าน No VAT',N,shareN(N.n,totN),shareN(N.fin,totF));
+
+  /* ── สัดส่วนรายเดือน (12 เดือนล่าสุดตามตัวกรอง) ── */
+  const mm=new Map();
+  tagged.forEach(r=>{
+    if(!r._year||r._year==='—'||!r._month||r._month==='—') return;
+    const k=r._year+'-'+r._month;
+    const o=mm.get(k)||{y:r._year,m:r._month,v:0,n:0};
+    if(r._sv==='V') o.v++; else o.n++;
+    mm.set(k,o);
+  });
+  const months=[...mm.entries()].sort((a,b)=>a[0]<b[0]?-1:1).slice(-12).map(e=>e[1]);
+  document.getElementById('vatMonth').innerHTML = months.length ? months.map(o=>{
+    const t=o.v+o.n, pv=t?o.v/t*100:0;
+    return `<div class="vat-mrow"><span>${_vatMonLabel(o.y,o.m)}</span>
+      <div class="vat-bar" title="VAT ${fmtInt(o.v)} · No VAT ${fmtInt(o.n)}"><div class="bv" style="width:${pv.toFixed(1)}%"></div><div class="bn" style="width:${(100-pv).toFixed(1)}%"></div></div>
+      <span class="r">${fmtInt(o.v)} / ${fmtInt(o.n)} · ${pv.toFixed(0)}%</span></div>`;
+  }).join('') : '<div class="cm-note">ไม่มีข้อมูลตามตัวกรอง</div>';
+
+  /* ── ตารางแยกกลุ่ม: ชั้นถัดไปของตัวกรองที่เลือกอยู่ ── */
+  let lvl, keyFn, labelFn, drill=null, hdr;
+  const amIsRM = state.am && RM_KEYS.has(state.am);
+  if(state.team){
+    lvl='CK/BK/AG'; hdr='CK/BK/AG'; keyFn=r=>r.marketing_fullname||'—'; labelFn=k=>k;
+  } else if(state.hub || (state.am && !amIsRM)){
+    lvl='ทีม'; hdr='ทีม'; keyFn=r=>(r.team_name_en||r.team_short||'—'); labelFn=k=>teamDisplayLabel(k)||k; drill='team';
+  } else if(amIsRM){
+    lvl='Hub RM'; hdr='Hub RM'; keyFn=r=>hubOf(r.team_short||'')||'—';
+    labelFn=k=>HUB_INFO[k]?`${k} · ${HUB_INFO[k].rm} (${HUB_INFO[k].nick})`:'ไม่ระบุ Hub'; drill='hub';
+  } else {
+    lvl='AM'; hdr='AM'; keyFn=r=>amOf(r.team_short||'')||'MC';
+    labelFn=k=>{
+      if(k==='MC') return 'MC (ทีมนอก AM1–4)';
+      const op=[...fAM.options].find(o=>o.value===k);   /* เช่น "AM1 · ชื่อ (ชื่อเล่น)" */
+      return op ? op.textContent : (AM_LABEL[k]||k);
+    }; drill='am';
+  }
+  document.getElementById('vatGrpTitle').textContent = `แยกตาม ${lvl}`;
+  document.getElementById('vatGrpHdr').textContent = hdr;
+  const gm=new Map();
+  tagged.forEach(r=>{
+    const k=keyFn(r);
+    let o=gm.get(k); if(!o){ o={k,sv:new Set(),sn:new Set(),v:0,n:0,fn:0}; gm.set(k,o); }
+    if(r._sv==='V'){ o.v++; o.sv.add(r.dealer_name_en); }
+    else { o.n++; o.fn+=r.finance_amt||0; o.sn.add(r.dealer_name_en); }
+  });
+  const grp=[...gm.values()].sort((a,b)=>(b.v+b.n)-(a.v+a.n));
+  const tot={v:0,n:0,fn:0,sv:new Set(),sn:new Set()};
+  grp.forEach(o=>{ tot.v+=o.v; tot.n+=o.n; tot.fn+=o.fn; o.sv.forEach(x=>tot.sv.add(x)); o.sn.forEach(x=>tot.sn.add(x)); });
+  const pctN=o=>{ const t=o.v+o.n; return t?o.n/t*100:0; };
+  const canDrill=k=> drill && k!=='—' && !(drill==='am' && k==='MC');
+  document.getElementById('vatGrpBody').innerHTML = grp.length ? grp.map(o=>
+    `<tr${canDrill(o.k)?` class="vat-drill" data-f="${drill}" data-k="${_esc(o.k)}" title="คลิกเพื่อเจาะลง"`:''}>
+      <td>${_esc(labelFn(o.k))}</td>
+      <td class="num">${fmtInt(o.sv.size)}</td><td class="num">${fmtInt(o.sn.size)}</td>
+      <td class="num">${fmtInt(o.v)}</td><td class="num">${fmtInt(o.n)}</td>
+      <td class="num"><b style="color:${pctN(o)>=40?'#6B4FA0':'inherit'}">${fmtPct(pctN(o))}</b></td>
+      <td class="num">${fmtBM(o.fn)}</td></tr>`).join('')
+    + `<tr style="font-weight:700;background:#F6F8FB"><td>รวม</td>
+      <td class="num">${fmtInt(tot.sv.size)}</td><td class="num">${fmtInt(tot.sn.size)}</td>
+      <td class="num">${fmtInt(tot.v)}</td><td class="num">${fmtInt(tot.n)}</td>
+      <td class="num">${fmtPct(pctN(tot))}</td><td class="num">${fmtBM(tot.fn)}</td></tr>`
+    : '<tr><td colspan="7" class="cm-note">ไม่มีข้อมูลตามตัวกรอง</td></tr>';
+
+  /* ── ร้านผสม ── */
+  const sm=new Map();
+  tagged.forEach(r=>{
+    const d=r.dealer_name_en;
+    let o=sm.get(d); if(!o){ o={d,sv:r._sv,v:0,n:0,last:'',tm:new Map()}; sm.set(d,o); }
+    if(r._cv===1) o.v++; else o.n++;
+    if(r._date && r._date>o.last) o.last=r._date;
+    const t=r.team_short||'—'; o.tm.set(t,(o.tm.get(t)||0)+1);
+  });
+  const mix=[...sm.values()].filter(o=>o.v>0 && o.n>0).map(o=>{
+    const t=o.v+o.n, minor=Math.min(o.v,o.n);
+    const team=[...o.tm.entries()].sort((a,b)=>b[1]-a[1])[0][0];
+    return {...o, t, minor, minorPct:minor/t*100, team};
+  }).sort((a,b)=>b.minor-a.minor || b.minorPct-a.minorPct);
+  const shopsAll=sm.size;
+  const hasCv = tagged.some(r=>r._cv===0||r._cv===1);
+  document.getElementById('vatMixSum').innerHTML = !hasCv
+    ? 'ข้อมูลชุดนี้ยังไม่มีป้าย VAT รายเคส — กรุณา build ใหม่'
+    : `พบร้านผสม <b>${fmtInt(mix.length)}</b> ร้าน จากทั้งหมด ${fmtInt(shopsAll)} ร้านตามตัวกรอง`
+      + (mix.length ? ` · เคสข้างน้อยรวม ${fmtInt(mix.reduce((s,o)=>s+o.minor,0))} เคส` : '');
+  const MAX_MIX=150;
+  document.getElementById('vatMixBody').innerHTML = mix.length ? mix.slice(0,MAX_MIX).map(o=>
+    `<tr><td><span class="vat-shop-link" data-shop="${_esc(o.d)}">${_esc(_dlShort(o.d))}</span></td>
+      <td><span class="vat-pill ${o.sv==='V'?'vat-v':'vat-n'}" style="margin-left:0">${o.sv==='V'?'VAT':'No VAT'}</span></td>
+      <td>${_esc(o.team)}</td>
+      <td class="num">${fmtInt(o.v)}</td><td class="num">${fmtInt(o.n)}</td>
+      <td class="num"><b style="color:${o.minorPct>=30?'var(--red)':'inherit'}">${fmtPct(o.minorPct)}</b></td>
+      <td class="num">${_esc(o.last||'—')}</td></tr>`).join('')
+    + (mix.length>MAX_MIX?`<tr><td colspan="7" class="cm-note">แสดง ${MAX_MIX} ร้านแรกจาก ${fmtInt(mix.length)} ร้าน</td></tr>`:'')
+    : '<tr><td colspan="7" class="cm-note">ไม่พบร้านผสมตามตัวกรอง</td></tr>';
+}
+/* คลิกแถว → เจาะลงชั้นถัดไป · คลิกชื่อร้านผสม → กรองเฉพาะร้านนั้น */
+document.getElementById('vatGrpBody')?.addEventListener('click',e=>{
+  const tr=e.target.closest('tr.vat-drill'); if(tr) _vatDrill(tr.dataset.f, tr.dataset.k);
+});
+document.getElementById('vatMixBody')?.addEventListener('click',e=>{
+  const s=e.target.closest('[data-shop]'); if(s) _setDealers([s.dataset.shop]);
+});
+
 function render(){
   const rows = getFiltered();
+  try{ renderVat(rows); }catch(err){ console.error('renderVat', err); }
   const k    = agg(rows);
   const mobileRows = rows.filter(r=>r.sub_product_type_code==='07'||r.sub_product_type_code==='08');
   const mo = agg(mobileRows);
@@ -4003,6 +4266,8 @@ function render(){
   else if(state.scope==='ea') tags.push('ขอบเขต: EA');
   if(state.maker==='emp') tags.push('ผู้ทำเคส: พนักงาน CK/BK/AG');
   else if(state.maker==='dlr') tags.push('ผู้ทำเคส: ร้านทำเคส');
+  if(state.vat==='vat')      tags.push('ประเภทร้าน: VAT');
+  else if(state.vat==='nov') tags.push('ประเภทร้าน: No VAT');
   if(state.bu)      tags.push(`BU: ${state.bu}`);
   if(state.am)      tags.push(`AM: ${AM_LABEL[state.am]||state.am}`);
   if(state.hub)     tags.push(`Hub RM: ${state.hub}${HUB_INFO[state.hub]?' · '+HUB_INFO[state.hub].rm:''}`);
