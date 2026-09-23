@@ -379,6 +379,17 @@ header{
 }
 .fbar-scope button.active{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.18);}
 .fbar-scope button:hover:not(.active){color:#fff;}
+/* กล่องรวมปุ่มสลับ 3 ชุดในบรรทัดเดียว — จอแคบจะตัดบรรทัดเอง */
+.fbar-toggles{display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px;}
+.fbar-tg{display:flex;align-items:center;gap:8px;flex:0 0 auto;min-width:0;}
+.fbar-tg-label{font-size:10.5px;font-weight:800;letter-spacing:.3px;color:#fff;opacity:.85;
+  display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
+.fbar-tg-label .ico{font-size:12px;line-height:1;}
+@media(max-width:480px){
+  .fbar-toggles{gap:7px 12px;}
+  .fbar-tg{width:100%;justify-content:space-between;}
+  .fbar-tg .fbar-scope button{padding:5px 9px;font-size:10.5px;}
+}
 /* Status bar — always visible below header */
 .fbar-status-bar{
   font-size:11px;font-weight:600;color:rgba(255,255,255,.92);
@@ -850,32 +861,27 @@ body.drill-open{overflow:hidden;}
     </div>
   </div>
   <div class="fbar" id="fbarPanel">
-    <!-- Row 0: Scope toggle (MO-only ↔ ทั้งหมด) -->
-    <div class="fbar-section">
-      <span class="fbar-sec-label"><span class="ico">🎯</span> ขอบเขตข้อมูล</span>
-      <div class="fbar-controls fbar-scope-row">
+    <!-- Row 0: ปุ่มสลับ 3 ชุดรวมในกล่องเดียว (ขอบเขต · ผู้ทำเคส · ประเภทร้าน)
+         จอแคบ → ตัดขึ้นบรรทัดใหม่อัตโนมัติ (flex-wrap) · JS ผูกกับ id เดิมทั้งหมด -->
+    <div class="fbar-section fbar-toggles">
+      <div class="fbar-tg">
+        <span class="fbar-tg-label"><span class="ico">🎯</span> ขอบเขต</span>
         <div class="fbar-scope" id="fScope" role="group" aria-label="ขอบเขตข้อมูล">
           <button type="button" data-scope="mo">MO</button>
           <button type="button" data-scope="ea">EA</button>
           <button type="button" data-scope="all" class="active">TOTAL</button>
         </div>
       </div>
-    </div>
-    <!-- Row 0b: Case-maker toggle (ร้านทำเคส ↔ พนักงาน CK/BK/AG ทำเคส) -->
-    <div class="fbar-section">
-      <span class="fbar-sec-label"><span class="ico">📲</span> ผู้ทำเคส</span>
-      <div class="fbar-controls fbar-scope-row">
+      <div class="fbar-tg">
+        <span class="fbar-tg-label"><span class="ico">📲</span> ผู้ทำเคส</span>
         <div class="fbar-scope" id="fMaker" role="group" aria-label="ผู้ทำเคส">
           <button type="button" data-maker="" class="active">ทั้งหมด</button>
           <button type="button" data-maker="emp">พนักงาน CK/BK/AG</button>
           <button type="button" data-maker="dlr">ร้านทำเคส</button>
         </div>
       </div>
-    </div>
-    <!-- Row 0c: ประเภทร้าน (VAT / No VAT) — อ้างอิงป้ายระดับร้านที่ต่อท้ายชื่อ Dealer -->
-    <div class="fbar-section">
-      <span class="fbar-sec-label"><span class="ico">🧾</span> ประเภทร้าน</span>
-      <div class="fbar-controls fbar-scope-row">
+      <div class="fbar-tg">
+        <span class="fbar-tg-label"><span class="ico">🧾</span> ประเภทร้าน</span>
         <div class="fbar-scope" id="fVat" role="group" aria-label="ประเภทร้าน VAT / No VAT">
           <button type="button" data-vat="" class="active">ทั้งหมด</button>
           <button type="button" data-vat="vat">ร้าน VAT</button>
@@ -1540,7 +1546,7 @@ body.drill-open{overflow:hidden;}
     const p = location.pathname;
     const base = p.endsWith('/') ? p + 'index' : p.replace(/\.html?$/, '');
     // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-    const url = base + '_data.json.gz?v=20260923132645';
+    const url = base + '_data.json.gz?v=20260923133654';
     const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
     const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
