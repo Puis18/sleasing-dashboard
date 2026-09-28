@@ -1552,6 +1552,7 @@ body.drill-open{overflow:hidden;}
         <button class="dm-tg active" data-show="all">ทั้งหมด</button>
         <button class="dm-tg" data-show="case">✅ มีเคส</button>
         <button class="dm-tg" data-show="none">⛔ ไม่มีเคส</button>
+        <button class="dm-tg active" data-user="1" id="hmUserBtn" title="ร้านที่มี User ในระบบ (Showroom_Master.has_user = Y) — กดอีกครั้งเพื่อดูทุกร้าน">👤 เฉพาะร้านที่มี User</button>
         <button class="dm-tg dm-exp" data-act="expand">⊞ กางทั้งหมด</button>
         <button class="dm-tg dm-exp" data-act="collapse">⊟ ยุบทั้งหมด</button>
         <button class="dm-tg dm-exp" data-act="csv">⬇ CSV รายชื่อร้าน</button>
@@ -1605,7 +1606,7 @@ body.drill-open{overflow:hidden;}
     const p = location.pathname;
     const base = p.endsWith('/') ? p + 'index' : p.replace(/\.html?$/, '');
     // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-    const url = base + '_data.json.gz?v=20260928162025';
+    const url = base + '_data.json.gz?v=20260928162902';
     const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
     const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
@@ -4164,6 +4165,7 @@ const _HM_HUB = {};
 const _HM_SHOPS = HM ? HM.shops : [];
 let _hmPer  = 'mtd';                 /* mtd | d30 | d7 | flt */
 let _hmShow = 'all';                 /* all | case | none */
+let _hmUserOnly = true;              /* แสดงเฉพาะร้านที่มี User (ค่าเริ่มต้น) */
 let _hmExpanded = new Set();
 let _hmRowsCache = [];
 let _hmLastView = null;
@@ -4211,7 +4213,7 @@ function _hmTeamLabel(sh){
 }
 /* สร้างมุมมองของหน้า: เคสในช่วงเวลา + สรุปต่อสาขา (รวมสาขาที่ไม่มีเคส) */
 function _hmBuild(){
-  const rows=ALL.filter(r=>r.hm && _hmHubPass(r.hm) && _hmPerPass(r));
+  let rows=ALL.filter(r=>r.hm && _hmHubPass(r.hm) && _hmPerPass(r));
   _hmRowsCache=rows;
   /* เคสล่าสุด (ทั้งปี ไม่ขึ้นกับช่วงเวลา) */
   const lastAll={};
@@ -4223,7 +4225,7 @@ function _hmBuild(){
     a.n++; a.fin+=r.finance_amt||0;
   });
   const seen=new Set();
-  const shops=[];
+  let shops=[];
   _HM_SHOPS.forEach(sh=>{
     if(!_hmHubPass(sh.hub)) return;
     const a=bySr.get(sh.sr)||{n:0,fin:0};
@@ -4239,7 +4241,14 @@ function _hmBuild(){
       team:r.team_short||'', tm:r.team_leader_fullname||'', prov:'', user:0, gone:0, ho:0,
       n:a.n, fin:a.fin, last:lastAll[r.sr]||''});
   });
-  return {rows, shops};
+  const userCnt=shops.filter(x=>x.user).length;
+  if(_hmUserOnly){
+    shops=shops.filter(x=>x.user);
+    const ok=new Set(shops.map(x=>x.sr));
+    rows=rows.filter(r=>ok.has(r.sr));
+    _hmRowsCache=rows;
+  }
+  return {rows, shops, userCnt};
 }
 function _hmAgg(shops){
   let n=0,fin=0,has=0,none=0,last='';
@@ -4262,12 +4271,14 @@ function renderHubMaster(){
     return;
   }
   const v=_hmBuild(); _hmLastView=v;
+  const ub=document.getElementById('hmUserBtn');
+  if(ub){ ub.textContent='👤 เฉพาะร้านที่มี User ('+fmtInt(v.userCnt)+')'; ub.classList.toggle('active',_hmUserOnly); }
   const all=_hmAgg(v.shops);
   const hubsIn=new Set(v.shops.map(s=>s.hub));
   let pend=0; Object.keys(HM.pending||{}).forEach(h=>{ if(_hmHubPass(h)) pend+=HM.pending[h]; });
   kEl.innerHTML=[
     ['Hub Master',fmtInt(hubsIn.size),'','navy'],
-    ['ร้าน Sub ทั้งหมด',fmtInt(all.tot),pend?('รอเปิด Code '+fmtInt(pend)):'','blue'],
+    [_hmUserOnly?'ร้าน Sub ที่มี User':'ร้าน Sub ทั้งหมด',fmtInt(all.tot),pend?('รอเปิด Code '+fmtInt(pend)):'','blue'],
     ['✅ ร้านมีเคส',fmtInt(all.has),all.pct.toFixed(1)+'%','green'],
     ['⛔ ร้านไม่มีเคส',fmtInt(all.none),(all.tot?100-all.pct:0).toFixed(1)+'%','orange'],
     ['เคสรวม',fmtInt(all.n),'','purple'],
@@ -4276,7 +4287,8 @@ function renderHubMaster(){
   if(nEl) nEl.innerHTML='ช่วงเวลา: <b>'+_esc(_hmPerLabel())+'</b> · '
     +'ทุกเคสของร้านใน Hub Master (รวมสำนักงานใหญ่) นับให้ <b>Hub RM เจ้าของ Hub</b> คนเดียว — '
     +'ผลงานทีมในหน้าอื่นยังนับตามทีมที่รับเคสเหมือนเดิม · '
-    +'หน้านี้ใช้ตัวกรอง AM / Hub RM (= เจ้าของ Hub) และไม่ขึ้นกับตัวกรองทีม/ผู้ทำเคส/BU';
+    +'หน้านี้ใช้ตัวกรอง AM / Hub RM (= เจ้าของ Hub) และไม่ขึ้นกับตัวกรองทีม/ผู้ทำเคส/BU'
+    +(_hmUserOnly?' · <b style="color:#1A3A6B">แสดงเฉพาะร้านที่มี User</b> (เคสของร้านที่ยังไม่มี User ไม่รวมในหน้านี้ — กดปุ่ม 👤 เพื่อดูทุกร้าน)':'');
 
   const AM_NAME={RM1:'AM1 · ศรีสุดา (หมวย)',RM2:'AM2 · อภิสิทธิ์ (ปุ้ย)',RM3:'AM3 · จารนัย (เพียว)',RM4:'AM4 · รักษ์พล (โต้ง)'};
   const tree=new Map();   /* am → unit → hub → [shops] */
@@ -4374,7 +4386,9 @@ document.addEventListener('click', e=>{
 document.addEventListener('click', e=>{
   const b=e.target.closest && e.target.closest('#p8 .dm-tg');
   if(!b) return;
-  if(b.dataset.per){
+  if(b.dataset.user){
+    _hmUserOnly=!_hmUserOnly;
+  } else if(b.dataset.per){
     _hmPer=b.dataset.per;
     document.querySelectorAll('#p8 .dm-tg[data-per]').forEach(x=>x.classList.toggle('active',x.dataset.per===_hmPer));
   } else if(b.dataset.show){
