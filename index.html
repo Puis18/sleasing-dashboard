@@ -1568,7 +1568,7 @@ body.drill-open{overflow:hidden;}
         <tbody id="hmTable"></tbody>
       </table></div>
       <div class="cm-note">คลิกแถวเพื่อกาง/ยุบ · คลิกตัวเลข <b>เคส</b> เพื่อดูรายเคส ·
-        <b>ร้าน Sub</b> = สาขาทั้งหมดของ Hub ในระบบลงทะเบียน (รวมสำนักงานใหญ่) ·
+        <b>ร้าน Sub</b> = เฉพาะสาขาที่ชื่อเป็น <b>… BY …</b> (สำนักงานใหญ่/สาขาของ Hub เองไม่นับในหน้านี้) ·
         <b>ทีมที่ดูแลร้าน</b> = ทีมพื้นที่ที่ร้านสังกัด — ใช้ประสานงานกระตุ้นยอด ·
         ป้าย <span class="hm-pill hm-x">ต่าง Hub</span> = ทีมที่ดูแลร้านอยู่คนละ Hub กับเจ้าของ Hub Master ·
         <b>เคสล่าสุด</b> นับจากข้อมูลทั้งปี (ไม่ขึ้นกับช่วงเวลา)</div>
@@ -1606,7 +1606,7 @@ body.drill-open{overflow:hidden;}
     const p = location.pathname;
     const base = p.endsWith('/') ? p + 'index' : p.replace(/\.html?$/, '');
     // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-    const url = base + '_data.json.gz?v=20260928163457';
+    const url = base + '_data.json.gz?v=20260928164723';
     const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
     const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
@@ -4280,7 +4280,7 @@ function renderHubMaster(){
     ['Finance',fmtBM(all.fin),'','teal'],
   ].map(([l,val,s,c])=>`<div class="cm-kpi ${c}"><div class="l">${l}</div><div class="v">${val}${s?` <span class="cm-sub">(${s})</span>`:''}</div></div>`).join('');
   if(nEl) nEl.innerHTML='ช่วงเวลา: <b>'+_esc(_hmPerLabel())+'</b> · '
-    +'ทุกเคสของร้านใน Hub Master (รวมสำนักงานใหญ่) นับให้ <b>Hub RM เจ้าของ Hub</b> คนเดียว — '
+    +'ทุกเคสของร้าน Sub (สาขา BY) ใน Hub Master นับให้ <b>Hub RM เจ้าของ Hub</b> คนเดียว — '
     +'ผลงานทีมในหน้าอื่นยังนับตามทีมที่รับเคสเหมือนเดิม · '
     +'หน้านี้ใช้ตัวกรอง AM / Hub RM (= เจ้าของ Hub) และไม่ขึ้นกับตัวกรองทีม/ผู้ทำเคส/BU'
     +(_hmUserOnly?' · <b style="color:#1A3A6B">แสดงเฉพาะร้านที่มี User</b> (ซ่อนร้านที่ยังไม่มี User และไม่มีเคส · ร้านที่มีเคสแสดงเสมอ ยอดเคสของ Hub จึงครบ — กดปุ่ม 👤 เพื่อดูทุกร้าน)':'');
