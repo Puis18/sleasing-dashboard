@@ -164,6 +164,32 @@ header{
 .dm-hi{background:#FDEBE0;color:#B4530F;}
 .dm-lo{background:#EDF0F4;color:#64748b;}
 .dm-warn{color:#C2410C;font-weight:600;}
+/* ── Apple vs Android (p2) ── */
+:root{--aa-apple:#2C6FBF;--aa-andr:#2FA36B;}
+.aa-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11.5px;color:var(--muted);margin-bottom:8px}
+.aa-sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.aa-cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.aa-k{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:#FBFCFE}
+.aa-k .l{font-size:11px;color:var(--muted);margin-bottom:6px}
+.aa-k .r{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.aa-k .r+.r{margin-top:4px}
+.aa-k .v{font-size:16px;font-weight:800}
+.aa-k .w{font-size:11px;color:var(--muted)}
+.aa-split,.aa-mix{display:flex;gap:2px;border-radius:5px;overflow:hidden}
+.aa-split{height:10px;margin-top:8px}
+.aa-mix{height:12px;min-width:110px}
+.aa-split i,.aa-mix i{display:block;height:100%}
+.aa-two{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+@media(max-width:820px){.aa-two{grid-template-columns:1fr}}
+.aa-h{font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:8px}
+.aa-tbl th[data-aas]{cursor:pointer;white-space:nowrap}
+.aa-tbl th.aa-on::after{content:' ▾'}
+.aa-sub{font-size:10.5px;color:var(--muted)}
+.aa-flag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:999px;background:#FDECEC;color:#B42318;font-weight:700;margin-left:4px}
+.aa-bb{display:grid;grid-template-columns:84px 1fr 44px;gap:8px;align-items:center;font-size:12px;margin:5px 0}
+.aa-bb .t{height:12px;background:#EEF1F6;border-radius:4px;overflow:hidden}
+.aa-bb .t i{display:block;height:100%;background:var(--aa-andr);border-radius:0 4px 4px 0}
+.aa-more{font:inherit;font-size:11px;border:1px solid var(--border);background:#fff;border-radius:999px;padding:2px 10px;cursor:pointer;color:var(--navy)}
 /* ── Hub Master (p8) ── */
 .hm-pill{display:inline-block;font-size:10px;padding:1px 7px;border-radius:999px;margin-left:6px;font-weight:600;white-space:nowrap;}
 .hm-ok{background:#E6F2EC;color:#1A7A4F;}
@@ -1059,6 +1085,35 @@ body.drill-open{overflow:hidden;}
 
     <div class="divider"></div>
 
+    <div class="section-title"><span class="bar"></span>📱 <span id="aaTitle">Apple vs Android</span></div>
+    <div class="card" id="aaCard">
+      <div class="aa-legend"><span><span class="aa-sw" style="background:var(--aa-apple)"></span>Apple</span><span><span class="aa-sw" style="background:var(--aa-andr)"></span>Android (ทุกยี่ห้อที่ไม่ใช่ Apple)</span></div>
+      <div class="aa-cmp" id="aaKpis"></div>
+      <div class="cm-note" id="aaNote"></div>
+    </div>
+    <div class="aa-two" style="margin-top:12px">
+      <div class="card">
+        <div class="aa-h">ทีม — Apple / Android</div>
+        <div class="table-wrap"><table class="aa-tbl">
+          <thead><tr><th data-aas="t:name">ทีม</th><th class="num" data-aas="t:tot">เคสมือถือ</th>
+            <th class="num" data-aas="t:a">Apple</th><th class="num" data-aas="t:d">Android</th>
+            <th data-aas="t:pa">สัดส่วน</th><th class="num" data-aas="t:avg">ยอดจัดเฉลี่ย A / D</th></tr></thead>
+          <tbody id="aaTeam"></tbody></table></div>
+        <div class="cm-note"><span id="aaTeamMore"></span> คลิกหัวคอลัมน์เพื่อเรียง · คลิกตัวเลขเพื่อดูรายเคส</div>
+      </div>
+      <div class="card"><div id="aaBrands"></div></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="aa-h">รายคน CK/BK/AG — Apple / Android</div>
+      <div class="table-wrap"><table class="aa-tbl">
+        <thead><tr><th data-aas="p:name">พนักงาน</th><th data-aas="p:team">ทีม</th><th class="num" data-aas="p:tot">เคสมือถือ</th>
+          <th class="num" data-aas="p:a">Apple</th><th class="num" data-aas="p:d">Android</th><th data-aas="p:pa">สัดส่วน</th>
+          <th class="num" data-aas="p:mca">%MC Apple</th><th class="num" data-aas="p:mcd">%MC Android</th></tr></thead>
+        <tbody id="aaStaff"></tbody></table></div>
+      <div class="cm-note"><span id="aaStaffMore"></span> เฉพาะเคสที่พนักงาน CK/BK/AG ทำ · %MC = %Mobile Care · ป้ายแดง = %MC ต่ำกว่า 60%</div>
+    </div>
+
+    <div class="divider"></div>
     <div class="section-title"><span class="bar"></span>📲 <span id="cmTitle">ผู้ทำเคส — พนักงาน vs ดีลเลอร์ (Sfast / S Phone)</span></div>
     <div class="card">
       <div id="cmKpis" class="cm-kpis"></div>
@@ -1606,7 +1661,7 @@ body.drill-open{overflow:hidden;}
     const p = location.pathname;
     const base = p.endsWith('/') ? p + 'index' : p.replace(/\.html?$/, '');
     // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-    const url = base + '_data.json.gz?v=20261011075322';
+    const url = base + '_data.json.gz?v=20261011104323';
     const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
     const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
@@ -3279,6 +3334,18 @@ function _drillFilter(rows, field, value){
       return true;
     });
   }
+  /* Apple vs Android (p2) — value = MODE|KEY|SIDE  (MODE: all / t=ทีม / p=พนักงาน · SIDE: A / D / ว่าง) */
+  if(field === '_aa'){
+    const p = value.split('|');
+    return rows.filter(r=>{
+      if(!_aaMob(r)) return false;
+      if(p[0]==='t' && r.team_short!==p[1]) return false;
+      if(p[0]==='p' && (r.marketing_fullname!==p[1] || r.maker!=='emp')) return false;
+      if(p[2]==='A' && !_aaIsA(r)) return false;
+      if(p[2]==='D' && _aaIsA(r))  return false;
+      return true;
+    });
+  }
   /* Hub Master (p8) — value = AM | UNIT[|HUB[|SHOWROOM]] */
   if(field === '_hm'){
     const p = value.split('|');
@@ -4159,6 +4226,112 @@ function renderDealerMaker(){
    • ไม่กระทบผลงานทีม (หน้าอื่นยังนับตามทีมที่รับเคส)
    • ตัวกรองที่ใช้: AM / Hub RM (= เจ้าของ Hub) + ช่วงเวลาของหน้านี้
    ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   Apple vs Android (p2) — นับเฉพาะมือถือใหม่ + มือสอง (sub_product 07/08)
+   Android = ทุกยี่ห้อที่ไม่ใช่ APPLE · ขึ้นกับตัวกรองด้านบนทั้งหมด
+   ═══════════════════════════════════════════════════════════════ */
+const _aaMob = r => r.sub_product_type_code==='07' || r.sub_product_type_code==='08';
+const _aaIsA = r => String(r.brand_name||'').toUpperCase()==='APPLE';
+let _aaSort = {t:'tot', p:'tot'};
+let _aaAll  = {t:false, p:false};
+function _aaS(){ return {n:0,fin:0,mc:0}; }
+function _aaAgg(rs){
+  const a=_aaS(), d=_aaS();
+  rs.forEach(r=>{ const s=_aaIsA(r)?a:d; s.n++; s.fin+=r.finance_amt||0; if((r.protected_amt||0)>0) s.mc++; });
+  const f=s=>({n:s.n,fin:s.fin,avg:s.n?s.fin/s.n:0,mc:s.n?s.mc/s.n*100:null});
+  const A=f(a), D=f(d), T=A.n+D.n;
+  return {a:A,d:D,tot:T,pa:T?A.n/T*100:0};
+}
+function _aaMix(a,d,lb){
+  const t=a+d||1, pa=a/t*100;
+  return `<div class="aa-mix" title="${_esc(lb)}Apple ${fmtInt(a)} (${pa.toFixed(0)}%) · Android ${fmtInt(d)} (${(100-pa).toFixed(0)}%)">`
+    +(a?`<i style="width:${pa}%;background:var(--aa-apple)"></i>`:'')+(d?`<i style="width:${100-pa}%;background:var(--aa-andr)"></i>`:'')+'</div>';
+}
+function _aaNum(n,mode,key,side,title){
+  if(!n) return '<td class="num" style="color:#C4CBD8">0</td>';
+  return `<td class="num"><span class="apps-clickable" data-scope="all" data-field="_aa" data-value="${_esc(mode+'|'+key+'|'+side)}" data-title="${_esc(title)}" data-subtitle="${side==='A'?'Apple':side==='D'?'Android':'มือถือทั้งหมด'}">${fmtInt(n)}</span></td>`;
+}
+function _aaSorted(list, key){
+  const v={name:x=>x.name, team:x=>x.team, tot:x=>x.g.tot, a:x=>x.g.a.n, d:x=>x.g.d.n, pa:x=>x.g.pa,
+           avg:x=>x.g.a.avg, mca:x=>x.g.a.mc==null?-1:x.g.a.mc, mcd:x=>x.g.d.mc==null?-1:x.g.d.mc}[key]||(x=>x.g.tot);
+  const asc = key==='name'||key==='team';
+  return list.slice().sort((x,y)=>{ const a=v(x), b=v(y);
+    return asc ? String(a).localeCompare(String(b)) : (b-a) || (y.g.tot-x.g.tot); });
+}
+function renderAppleAndroid(rows){
+  const kEl=document.getElementById('aaKpis'); if(!kEl) return;
+  const mob=(rows||[]).filter(_aaMob);
+  const all=_aaAgg(mob), A=all.a, D=all.d;
+  const nEl=document.getElementById('aaNote');
+  if(nEl) nEl.innerHTML='นับเฉพาะ <b>มือถือใหม่ + มือสอง</b> ('+fmtInt(mob.length)+' เคส) · Android = ทุกยี่ห้อที่ไม่ใช่ Apple · ขึ้นกับตัวกรองด้านบนทั้งหมด';
+  if(!mob.length){
+    kEl.innerHTML='<div class="aa-sub">— ไม่มีเคสมือถือตามตัวกรอง —</div>';
+    ['aaTeam','aaStaff'].forEach(id=>{ const e=document.getElementById(id); if(e) e.innerHTML=''; });
+    const b=document.getElementById('aaBrands'); if(b) b.innerHTML='';
+    return;
+  }
+  const kp=(l,av,dv,bar)=>`<div class="aa-k"><div class="l">${l}</div>
+    <div class="r"><span class="w"><span class="aa-sw" style="background:var(--aa-apple)"></span>Apple</span><span class="v">${av}</span></div>
+    <div class="r"><span class="w"><span class="aa-sw" style="background:var(--aa-andr)"></span>Android</span><span class="v">${dv}</span></div>${bar||''}</div>`;
+  const sb=(a,d)=>{ const t=a+d||1; return `<div class="aa-split" title="Apple ${(a/t*100).toFixed(1)}% · Android ${(d/t*100).toFixed(1)}%"><i style="width:${a/t*100}%;background:var(--aa-apple)"></i><i style="width:${d/t*100}%;background:var(--aa-andr)"></i></div>`; };
+  const pct=v=>v==null?'—':v.toFixed(1)+'%';
+  kEl.innerHTML=[
+    kp('จำนวนเคส',fmtInt(A.n),fmtInt(D.n),sb(A.n,D.n)),
+    kp('สัดส่วนเคส',all.pa.toFixed(1)+'%',(100-all.pa).toFixed(1)+'%'),
+    kp('ยอดจัด (Finance)',fmtBM(A.fin),fmtBM(D.fin),sb(A.fin,D.fin)),
+    kp('ยอดจัดเฉลี่ย / เคส',fmtB(A.avg),fmtB(D.avg)),
+    kp('%Mobile Care',pct(A.mc),pct(D.mc)),
+  ].join('');
+
+  /* ทีม */
+  const tm=new Map();
+  mob.forEach(r=>{ const k=r.team_short||'—'; if(!tm.has(k)) tm.set(k,[]); tm.get(k).push(r); });
+  let tl=[...tm.entries()].map(([k,rs])=>({key:k,name:k.replace(/^TEAM /,''),lead:rs[rs.length-1].team_leader_fullname||'',g:_aaAgg(rs)}));
+  tl=_aaSorted(tl,_aaSort.t);
+  const tShow=_aaAll.t?tl:tl.slice(0,15);
+  document.getElementById('aaTeam').innerHTML=tShow.map(x=>`<tr>
+    <td><b>${_esc(x.name)}</b>${x.lead&&x.lead!=='—'?`<div class="aa-sub">${_esc(x.lead)}</div>`:''}</td>
+    ${_aaNum(x.g.tot,'t',x.key,'',x.name)}${_aaNum(x.g.a.n,'t',x.key,'A',x.name+' · Apple')}${_aaNum(x.g.d.n,'t',x.key,'D',x.name+' · Android')}
+    <td>${_aaMix(x.g.a.n,x.g.d.n,x.name+' · ')}</td>
+    <td class="num">${x.g.a.n?fmtB(x.g.a.avg):'—'}<div class="aa-sub">${x.g.d.n?fmtB(x.g.d.avg):'—'}</div></td></tr>`).join('');
+  const tm2=document.getElementById('aaTeamMore');
+  if(tm2) tm2.innerHTML = tl.length>15 ? `แสดง ${tShow.length} จาก ${tl.length} ทีม <button class="aa-more" data-aamore="t">${_aaAll.t?'แสดง 15 ทีม':'แสดงทั้งหมด'}</button> ·` : '';
+
+  /* ยี่ห้อ Android */
+  const bc=new Map(); mob.forEach(r=>{ if(_aaIsA(r)) return; const b=r.brand_name||'—'; bc.set(b,(bc.get(b)||0)+1); });
+  const bl=[...bc.entries()].sort((x,y)=>y[1]-x[1]); const bt=D.n||1, bmax=bl.length?bl[0][1]:1;
+  const top=bl.slice(0,8), rest=bl.slice(8).reduce((s,x)=>s+x[1],0);
+  if(rest) top.push(['อื่น ๆ',rest]);
+  document.getElementById('aaBrands').innerHTML='<div class="aa-h">Android แยกยี่ห้อ ('+fmtInt(D.n)+' เคส)</div>'
+    +(top.length?top.map(([b,n])=>`<div class="aa-bb"><span>${_esc(b)}</span><div class="t" title="${_esc(b)} ${fmtInt(n)} เคส · ${(n/bt*100).toFixed(1)}%"><i style="width:${n/bmax*100}%"></i></div><span style="text-align:right">${(n/bt*100).toFixed(0)}%</span></div>`).join('')
+      :'<div class="aa-sub">— ไม่มีเคส Android —</div>');
+
+  /* รายคน CK/BK/AG */
+  const pm=new Map();
+  mob.forEach(r=>{ if(r.maker!=='emp') return; const k=r.marketing_fullname||'—'; if(!pm.has(k)) pm.set(k,[]); pm.get(k).push(r); });
+  let pl=[...pm.entries()].map(([k,rs])=>({key:k,name:k,team:(rs[rs.length-1].team_short||'').replace(/^TEAM /,''),g:_aaAgg(rs)}));
+  pl=_aaSorted(pl,_aaSort.p);
+  const pShow=_aaAll.p?pl:pl.slice(0,20);
+  const mcTd=v=>v==null?'<td class="num aa-sub">—</td>':`<td class="num">${v.toFixed(0)}%${v<60?'<span class="aa-flag">ต่ำ</span>':''}</td>`;
+  document.getElementById('aaStaff').innerHTML=pShow.length?pShow.map(x=>`<tr>
+    <td><b>${_esc(x.name)}</b>${typeof _mkNick==='function'&&_mkNick(x.name)?` <span class="aa-sub">(${_esc(_mkNick(x.name))})</span>`:''}</td>
+    <td class="aa-sub">${_esc(x.team)}</td>
+    ${_aaNum(x.g.tot,'p',x.key,'',x.name)}${_aaNum(x.g.a.n,'p',x.key,'A',x.name+' · Apple')}${_aaNum(x.g.d.n,'p',x.key,'D',x.name+' · Android')}
+    <td>${_aaMix(x.g.a.n,x.g.d.n,x.name+' · ')}</td>${mcTd(x.g.a.mc)}${mcTd(x.g.d.mc)}</tr>`).join('')
+    :'<tr><td colspan="8" class="aa-sub" style="text-align:center;padding:12px">— ไม่มีเคสที่พนักงาน CK/BK/AG ทำตามตัวกรอง —</td></tr>';
+  const pm2=document.getElementById('aaStaffMore');
+  if(pm2) pm2.innerHTML = pl.length>20 ? `แสดง ${pShow.length} จาก ${pl.length} คน <button class="aa-more" data-aamore="p">${_aaAll.p?'แสดง 20 คน':'แสดงทั้งหมด'}</button> ·` : '';
+  document.querySelectorAll('#p2 th[data-aas]').forEach(th=>{ const [t,k]=th.dataset.aas.split(':'); th.classList.toggle('aa-on', _aaSort[t]===k); });
+}
+document.addEventListener('click', e=>{
+  const th=e.target.closest && e.target.closest('#p2 th[data-aas]');
+  const mb=e.target.closest && e.target.closest('#p2 .aa-more');
+  if(!th && !mb) return;
+  if(th){ const [t,k]=th.dataset.aas.split(':'); _aaSort[t]=k; }
+  if(mb){ const t=mb.dataset.aamore; _aaAll[t]=!_aaAll[t]; }
+  renderAppleAndroid(typeof _lastData!=='undefined' && _lastData ? _lastData.rows : getFiltered());
+});
+
 const HM = DATA.hub_master || null;
 const _HM_HUB = {};
 (HM ? HM.hubs : []).forEach(h=>{ _HM_HUB[h.code]=h; });
@@ -5362,6 +5535,8 @@ function render(){
   renderDealerMaker();
   /* ── p8: Hub Master ── */
   try{ renderHubMaster(); }catch(err){ console.error('renderHubMaster', err); }
+  /* ── p2: Apple vs Android ── */
+  try{ renderAppleAndroid(rows); }catch(err){ console.error('renderAppleAndroid', err); }
 
   /* Store for page-switch re-render */
   _lastData = {rows,k,mo,team,ncb,brand,pv,mobileRows,mktInTeam,mktSrc,inTeamMode,irData,dailyData,monthlyData,dailyAttach,moCond,approve,occ,
