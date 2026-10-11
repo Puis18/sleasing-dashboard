@@ -179,11 +179,11 @@ header{
 .aa-split{height:10px;margin-top:8px}
 .aa-mix{height:12px;min-width:110px}
 .aa-split i,.aa-mix i{display:block;height:100%}
-.aa-two{display:grid;grid-template-columns:2fr 1fr;gap:12px}
-@media(max-width:820px){.aa-two{grid-template-columns:1fr}}
 .aa-h{font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:8px}
-.aa-tbl th[data-aas]{cursor:pointer;white-space:nowrap}
-.aa-tbl th.aa-on::after{content:' ▾'}
+.aa-seg{display:inline-flex;align-items:center;gap:4px;margin:0 0 8px;padding:3px;border:1px solid var(--border);border-radius:999px;background:#F4F6FA;font-size:11.5px}
+.aa-seg .aa-seg-l{color:var(--muted);padding:0 6px 0 8px}
+.aa-seg button{font:inherit;border:0;background:transparent;border-radius:999px;padding:3px 12px;cursor:pointer;color:var(--navy)}
+.aa-seg button.on{background:#fff;box-shadow:0 1px 2px rgba(16,24,40,.14);font-weight:700}
 .aa-sub{font-size:10.5px;color:var(--muted)}
 .aa-flag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:999px;background:#FDECEC;color:#B42318;font-weight:700;margin-left:4px}
 .aa-bb{display:grid;grid-template-columns:84px 1fr 44px;gap:8px;align-items:center;font-size:12px;margin:5px 0}
@@ -1063,6 +1063,7 @@ body.drill-open{overflow:hidden;}
         <div id="teamAppsScore" style="display:none;margin-top:10px;border-top:1px dashed var(--border);padding-top:8px;"></div>
       </div>
       <div class="card">
+        <div id="teamViewSw"></div>
         <div id="teamCtrl"></div>
         <div class="table-wrap"><table class="table-resp">
           <thead id="teamTableHead"><tr>
@@ -1073,6 +1074,7 @@ body.drill-open{overflow:hidden;}
           </tr></thead>
           <tbody id="teamTable"></tbody>
         </table></div>
+        <div class="cm-note" id="teamViewNote" style="display:none"></div>
         <div id="teamTableScore" style="display:none;margin-top:10px;border-top:1px dashed var(--border);padding-top:8px;"></div>
       </div>
     </div>
@@ -1091,27 +1093,8 @@ body.drill-open{overflow:hidden;}
       <div class="aa-cmp" id="aaKpis"></div>
       <div class="cm-note" id="aaNote"></div>
     </div>
-    <div class="aa-two" style="margin-top:12px">
-      <div class="card">
-        <div class="aa-h">ทีม — Apple / Android</div>
-        <div class="table-wrap"><table class="aa-tbl">
-          <thead><tr><th data-aas="t:name">ทีม</th><th class="num" data-aas="t:tot">เคสมือถือ</th>
-            <th class="num" data-aas="t:a">Apple</th><th class="num" data-aas="t:d">Android</th>
-            <th data-aas="t:pa">สัดส่วน</th><th class="num" data-aas="t:avg">ยอดจัดเฉลี่ย A / D</th></tr></thead>
-          <tbody id="aaTeam"></tbody></table></div>
-        <div class="cm-note"><span id="aaTeamMore"></span> คลิกหัวคอลัมน์เพื่อเรียง · คลิกตัวเลขเพื่อดูรายเคส</div>
-      </div>
-      <div class="card"><div id="aaBrands"></div></div>
-    </div>
-    <div class="card" style="margin-top:12px">
-      <div class="aa-h">รายคน CK/BK/AG — Apple / Android</div>
-      <div class="table-wrap"><table class="aa-tbl">
-        <thead><tr><th data-aas="p:name">พนักงาน</th><th data-aas="p:team">ทีม</th><th class="num" data-aas="p:tot">เคสมือถือ</th>
-          <th class="num" data-aas="p:a">Apple</th><th class="num" data-aas="p:d">Android</th><th data-aas="p:pa">สัดส่วน</th>
-          <th class="num" data-aas="p:mca">%MC Apple</th><th class="num" data-aas="p:mcd">%MC Android</th></tr></thead>
-        <tbody id="aaStaff"></tbody></table></div>
-      <div class="cm-note"><span id="aaStaffMore"></span> เฉพาะเคสที่พนักงาน CK/BK/AG ทำ · %MC = %Mobile Care · ป้ายแดง = %MC ต่ำกว่า 60%</div>
-    </div>
+    <div class="card" style="margin-top:12px"><div id="aaBrands"></div></div>
+    <div class="cm-note" style="margin-top:8px">ตารางรายทีม / รายคน CK/BK/AG แบบ Apple vs Android: <button type="button" class="aa-more" id="aaGoTable">ดูในตาราง Team ด้านบน ↑</button></div>
 
     <div class="divider"></div>
     <div class="section-title"><span class="bar"></span>📲 <span id="cmTitle">ผู้ทำเคส — พนักงาน vs ดีลเลอร์ (Sfast / S Phone)</span></div>
@@ -1661,7 +1644,7 @@ body.drill-open{overflow:hidden;}
     const p = location.pathname;
     const base = p.endsWith('/') ? p + 'index' : p.replace(/\.html?$/, '');
     // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-    const url = base + '_data.json.gz?v=20261011104323';
+    const url = base + '_data.json.gz?v=20261011120625';
     const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
     const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
@@ -4232,15 +4215,14 @@ function renderDealerMaker(){
    ═══════════════════════════════════════════════════════════════ */
 const _aaMob = r => r.sub_product_type_code==='07' || r.sub_product_type_code==='08';
 const _aaIsA = r => String(r.brand_name||'').toUpperCase()==='APPLE';
-let _aaSort = {t:'tot', p:'tot'};
-let _aaAll  = {t:false, p:false};
+let _teamView = 'normal';   /* มุมมองตาราง Team / CK-BK-AG: 'normal' | 'aa' */
 function _aaS(){ return {n:0,fin:0,mc:0}; }
 function _aaAgg(rs){
   const a=_aaS(), d=_aaS();
   rs.forEach(r=>{ const s=_aaIsA(r)?a:d; s.n++; s.fin+=r.finance_amt||0; if((r.protected_amt||0)>0) s.mc++; });
   const f=s=>({n:s.n,fin:s.fin,avg:s.n?s.fin/s.n:0,mc:s.n?s.mc/s.n*100:null});
   const A=f(a), D=f(d), T=A.n+D.n;
-  return {a:A,d:D,tot:T,pa:T?A.n/T*100:0};
+  return {a:A,d:D,tot:T,pa:T?A.n/T*100:0,fin:A.fin+D.fin,mcAll:T?(a.mc+d.mc)/T*100:null};
 }
 function _aaMix(a,d,lb){
   const t=a+d||1, pa=a/t*100;
@@ -4251,12 +4233,67 @@ function _aaNum(n,mode,key,side,title){
   if(!n) return '<td class="num" style="color:#C4CBD8">0</td>';
   return `<td class="num"><span class="apps-clickable" data-scope="all" data-field="_aa" data-value="${_esc(mode+'|'+key+'|'+side)}" data-title="${_esc(title)}" data-subtitle="${side==='A'?'Apple':side==='D'?'Android':'มือถือทั้งหมด'}">${fmtInt(n)}</span></td>`;
 }
-function _aaSorted(list, key){
-  const v={name:x=>x.name, team:x=>x.team, tot:x=>x.g.tot, a:x=>x.g.a.n, d:x=>x.g.d.n, pa:x=>x.g.pa,
-           avg:x=>x.g.a.avg, mca:x=>x.g.a.mc==null?-1:x.g.a.mc, mcd:x=>x.g.d.mc==null?-1:x.g.d.mc}[key]||(x=>x.g.tot);
-  const asc = key==='name'||key==='team';
-  return list.slice().sort((x,y)=>{ const a=v(x), b=v(y);
-    return asc ? String(a).localeCompare(String(b)) : (b-a) || (y.g.tot-x.g.tot); });
+/* แถวข้อมูลสำหรับตาราง Team (smartTable) — apps/finance/attach_rate ใส่ไว้ให้ scoreboard อันดับถัดไปใช้ */
+function _aaTeamRows(rows){
+  const tm=new Map();
+  (rows||[]).filter(_aaMob).forEach(r=>{ const k=r.team_short||'—'; if(!tm.has(k)) tm.set(k,[]); tm.get(k).push(r); });
+  return [...tm.entries()].map(([k,rs])=>{ const g=_aaAgg(rs);
+    return {key:k,name:k.replace(/^TEAM /,''),lead:(rs[rs.length-1].team_leader_fullname||'').trim(),g,apps:g.tot,finance:g.fin,attach_rate:g.mcAll}; });
+}
+function _aaPersonRows(rows){
+  const pm=new Map();
+  (rows||[]).filter(_aaMob).forEach(r=>{ if(r.maker!=='emp') return; const k=r.marketing_fullname||'—'; if(!pm.has(k)) pm.set(k,[]); pm.get(k).push(r); });
+  return [...pm.entries()].map(([k,rs])=>{ const g=_aaAgg(rs);
+    return {key:k,name:k,lead:'',g,apps:g.tot,finance:g.fin,attach_rate:g.mcAll}; });
+}
+function _teamViewSwitch(){
+  const el=document.getElementById('teamViewSw'); if(!el) return;
+  el.innerHTML='<div class="aa-seg"><span class="aa-seg-l">มุมมอง</span>'
+    +'<button type="button" data-tview="normal" class="'+(_teamView==='normal'?'on':'')+'">ปกติ</button>'
+    +'<button type="button" data-tview="aa" class="'+(_teamView==='aa'?'on':'')+'">📱 Apple vs Android</button></div>';
+}
+/* วาดตาราง Team (persons=false) หรือ CK/BK/AG (persons=true) ในมุมมอง Apple vs Android — ใช้ #teamTable เดิม */
+function _drawAaTable(rows, persons){
+  const th=document.getElementById('teamTableHead');
+  const sw=c=>'<span class="aa-sw" style="background:var(--'+c+')"></span>';
+  if(th) th.innerHTML='<tr><th>'+(persons?'CK/BK/AG':'TEAM')+'</th><th class="num">เคสมือถือ</th>'
+    +'<th class="num">'+sw('aa-apple')+'Apple</th><th class="num">'+sw('aa-andr')+'Android</th><th>สัดส่วน</th>'
+    +'<th class="num">ยอดจัดเฉลี่ย A / D</th><th class="num">%MC Apple</th><th class="num">%MC Android</th></tr>';
+  const mode=persons?'p':'t';
+  const mcTd=v=>v==null?'<td class="num aa-sub">—</td>':`<td class="num">${v.toFixed(0)}%${v<60?'<span class="aa-flag">ต่ำ</span>':''}</td>`;
+  smartTable({
+    tableId:'teamTable', controlsHostId:'teamCtrl',
+    rows: persons?_aaPersonRows(rows):_aaTeamRows(rows),
+    searchFields: persons?['key']:['key','lead'],
+    searchPlaceholder: persons?'ค้น CK/BK/AG…':'ค้นทีม / หัวหน้า…',
+    defaultSort:{key:'apps',dir:'desc'},
+    emptyText: persons?'— ไม่มีเคสที่พนักงาน CK/BK/AG ทำตามตัวกรอง —':'— ไม่มีเคสมือถือตามตัวกรอง —',
+    maxRows:15, scoreboardHostId:'teamTableScore',
+    columns:[
+      {key:'key',  sortKey:r=>persons?r.key:r.name,
+        render:x=>persons?`<td>${_mkNameCell(x.key)}</td>`
+          :`<td><b>${_esc(x.name)}</b>${x.lead&&x.lead!=='—'?`<div class="aa-sub">${_esc(x.lead)}</div>`:''}</td>`},
+      {key:'apps', sortKey:r=>r.g.tot,  numeric:true, render:x=>_aaNum(x.g.tot,mode,x.key,'',x.name)},
+      {key:'a',    sortKey:r=>r.g.a.n,   numeric:true, render:x=>_aaNum(x.g.a.n,mode,x.key,'A',x.name+' · Apple')},
+      {key:'d',    sortKey:r=>r.g.d.n,   numeric:true, render:x=>_aaNum(x.g.d.n,mode,x.key,'D',x.name+' · Android')},
+      {key:'mix',  sortKey:r=>r.g.pa,    render:x=>`<td>${_aaMix(x.g.a.n,x.g.d.n,x.name+' · ')}</td>`},
+      {key:'avg',  sortKey:r=>r.g.a.avg, numeric:true,
+        render:x=>`<td class="num">${x.g.a.n?fmtB(x.g.a.avg):'—'}<div class="aa-sub">${x.g.d.n?fmtB(x.g.d.avg):'—'}</div></td>`},
+      {key:'mca',  sortKey:r=>r.g.a.mc==null?-1:r.g.a.mc, numeric:true, render:x=>mcTd(x.g.a.mc)},
+      {key:'mcd',  sortKey:r=>r.g.d.mc==null?-1:r.g.d.mc, numeric:true, render:x=>mcTd(x.g.d.mc)}
+    ]
+  });
+  const vn=document.getElementById('teamViewNote');
+  if(vn){
+    vn.style.display='block';
+    vn.innerHTML='นับเฉพาะ <b>มือถือใหม่ + มือสอง</b> · Android = ทุกยี่ห้อที่ไม่ใช่ Apple · ยอดจัดเฉลี่ย: บน = Apple / ล่าง = Android · %MC = %Mobile Care ป้ายแดง = ต่ำกว่า 60%'
+      +(persons?' · เฉพาะเคสที่พนักงาน CK/BK/AG ทำ':'')+' · คลิกตัวเลขเพื่อดูรายเคส';
+  }
+}
+function _setTeamView(v){
+  _teamView=v;
+  if(typeof _stState!=='undefined') delete _stState.teamTable;   /* รีเซ็ตการเรียง/ค้นหาของตารางนี้ */
+  if(typeof window._drawTeamTable==='function') window._drawTeamTable();
 }
 function renderAppleAndroid(rows){
   const kEl=document.getElementById('aaKpis'); if(!kEl) return;
@@ -4266,7 +4303,6 @@ function renderAppleAndroid(rows){
   if(nEl) nEl.innerHTML='นับเฉพาะ <b>มือถือใหม่ + มือสอง</b> ('+fmtInt(mob.length)+' เคส) · Android = ทุกยี่ห้อที่ไม่ใช่ Apple · ขึ้นกับตัวกรองด้านบนทั้งหมด';
   if(!mob.length){
     kEl.innerHTML='<div class="aa-sub">— ไม่มีเคสมือถือตามตัวกรอง —</div>';
-    ['aaTeam','aaStaff'].forEach(id=>{ const e=document.getElementById(id); if(e) e.innerHTML=''; });
     const b=document.getElementById('aaBrands'); if(b) b.innerHTML='';
     return;
   }
@@ -4283,20 +4319,6 @@ function renderAppleAndroid(rows){
     kp('%Mobile Care',pct(A.mc),pct(D.mc)),
   ].join('');
 
-  /* ทีม */
-  const tm=new Map();
-  mob.forEach(r=>{ const k=r.team_short||'—'; if(!tm.has(k)) tm.set(k,[]); tm.get(k).push(r); });
-  let tl=[...tm.entries()].map(([k,rs])=>({key:k,name:k.replace(/^TEAM /,''),lead:rs[rs.length-1].team_leader_fullname||'',g:_aaAgg(rs)}));
-  tl=_aaSorted(tl,_aaSort.t);
-  const tShow=_aaAll.t?tl:tl.slice(0,15);
-  document.getElementById('aaTeam').innerHTML=tShow.map(x=>`<tr>
-    <td><b>${_esc(x.name)}</b>${x.lead&&x.lead!=='—'?`<div class="aa-sub">${_esc(x.lead)}</div>`:''}</td>
-    ${_aaNum(x.g.tot,'t',x.key,'',x.name)}${_aaNum(x.g.a.n,'t',x.key,'A',x.name+' · Apple')}${_aaNum(x.g.d.n,'t',x.key,'D',x.name+' · Android')}
-    <td>${_aaMix(x.g.a.n,x.g.d.n,x.name+' · ')}</td>
-    <td class="num">${x.g.a.n?fmtB(x.g.a.avg):'—'}<div class="aa-sub">${x.g.d.n?fmtB(x.g.d.avg):'—'}</div></td></tr>`).join('');
-  const tm2=document.getElementById('aaTeamMore');
-  if(tm2) tm2.innerHTML = tl.length>15 ? `แสดง ${tShow.length} จาก ${tl.length} ทีม <button class="aa-more" data-aamore="t">${_aaAll.t?'แสดง 15 ทีม':'แสดงทั้งหมด'}</button> ·` : '';
-
   /* ยี่ห้อ Android */
   const bc=new Map(); mob.forEach(r=>{ if(_aaIsA(r)) return; const b=r.brand_name||'—'; bc.set(b,(bc.get(b)||0)+1); });
   const bl=[...bc.entries()].sort((x,y)=>y[1]-x[1]); const bt=D.n||1, bmax=bl.length?bl[0][1]:1;
@@ -4305,31 +4327,16 @@ function renderAppleAndroid(rows){
   document.getElementById('aaBrands').innerHTML='<div class="aa-h">Android แยกยี่ห้อ ('+fmtInt(D.n)+' เคส)</div>'
     +(top.length?top.map(([b,n])=>`<div class="aa-bb"><span>${_esc(b)}</span><div class="t" title="${_esc(b)} ${fmtInt(n)} เคส · ${(n/bt*100).toFixed(1)}%"><i style="width:${n/bmax*100}%"></i></div><span style="text-align:right">${(n/bt*100).toFixed(0)}%</span></div>`).join('')
       :'<div class="aa-sub">— ไม่มีเคส Android —</div>');
-
-  /* รายคน CK/BK/AG */
-  const pm=new Map();
-  mob.forEach(r=>{ if(r.maker!=='emp') return; const k=r.marketing_fullname||'—'; if(!pm.has(k)) pm.set(k,[]); pm.get(k).push(r); });
-  let pl=[...pm.entries()].map(([k,rs])=>({key:k,name:k,team:(rs[rs.length-1].team_short||'').replace(/^TEAM /,''),g:_aaAgg(rs)}));
-  pl=_aaSorted(pl,_aaSort.p);
-  const pShow=_aaAll.p?pl:pl.slice(0,20);
-  const mcTd=v=>v==null?'<td class="num aa-sub">—</td>':`<td class="num">${v.toFixed(0)}%${v<60?'<span class="aa-flag">ต่ำ</span>':''}</td>`;
-  document.getElementById('aaStaff').innerHTML=pShow.length?pShow.map(x=>`<tr>
-    <td><b>${_esc(x.name)}</b>${typeof _mkNick==='function'&&_mkNick(x.name)?` <span class="aa-sub">(${_esc(_mkNick(x.name))})</span>`:''}</td>
-    <td class="aa-sub">${_esc(x.team)}</td>
-    ${_aaNum(x.g.tot,'p',x.key,'',x.name)}${_aaNum(x.g.a.n,'p',x.key,'A',x.name+' · Apple')}${_aaNum(x.g.d.n,'p',x.key,'D',x.name+' · Android')}
-    <td>${_aaMix(x.g.a.n,x.g.d.n,x.name+' · ')}</td>${mcTd(x.g.a.mc)}${mcTd(x.g.d.mc)}</tr>`).join('')
-    :'<tr><td colspan="8" class="aa-sub" style="text-align:center;padding:12px">— ไม่มีเคสที่พนักงาน CK/BK/AG ทำตามตัวกรอง —</td></tr>';
-  const pm2=document.getElementById('aaStaffMore');
-  if(pm2) pm2.innerHTML = pl.length>20 ? `แสดง ${pShow.length} จาก ${pl.length} คน <button class="aa-more" data-aamore="p">${_aaAll.p?'แสดง 20 คน':'แสดงทั้งหมด'}</button> ·` : '';
-  document.querySelectorAll('#p2 th[data-aas]').forEach(th=>{ const [t,k]=th.dataset.aas.split(':'); th.classList.toggle('aa-on', _aaSort[t]===k); });
 }
 document.addEventListener('click', e=>{
-  const th=e.target.closest && e.target.closest('#p2 th[data-aas]');
-  const mb=e.target.closest && e.target.closest('#p2 .aa-more');
-  if(!th && !mb) return;
-  if(th){ const [t,k]=th.dataset.aas.split(':'); _aaSort[t]=k; }
-  if(mb){ const t=mb.dataset.aamore; _aaAll[t]=!_aaAll[t]; }
-  renderAppleAndroid(typeof _lastData!=='undefined' && _lastData ? _lastData.rows : getFiltered());
+  const sw=e.target.closest && e.target.closest('#teamViewSw button[data-tview]');
+  if(sw){ _setTeamView(sw.dataset.tview); return; }
+  const go=e.target.closest && e.target.closest('#aaGoTable');
+  if(go){
+    _setTeamView('aa');
+    const el=document.getElementById('teamViewSw');
+    if(el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'start'});
+  }
 });
 
 const HM = DATA.hub_master || null;
@@ -5067,6 +5074,10 @@ function render(){
   // เกณฑ์สีของ % ACHIEVE TARGET: 🟢 ≥100% · 🟡 80–99% · 🔴 <80%
   const achieveCls=p=>p>=100?'green':p>=80?'amber':'red';
 
+  const _drawTeamTable=()=>{
+  _teamViewSwitch();
+  if(_teamView==='aa'){ _drawAaTable(rows, teamFiltered); return; }
+  const _vn=document.getElementById('teamViewNote'); if(_vn) _vn.style.display='none';
   if(teamFiltered && mktSrc.length){
     const th=document.getElementById('teamTableHead');
     if(th) th.innerHTML='<tr><th>CK/BK/AG</th><th class="num">Apps</th><th class="num">Finance ฿</th><th class="num">% ACHIEVE TARGET</th><th class="num">฿/เคส</th><th class="num">%Mobile Care</th></tr>';
@@ -5108,6 +5119,9 @@ function render(){
       ]
     });
   }
+  };
+  window._drawTeamTable=_drawTeamTable;
+  _drawTeamTable();
 
   const _ncbCl=key=>key==='Yes (Negative)'?'red':key==='Yes (Normal)'?'amber':key==='Yes (Good)'?'green':'grey';
   smartTable({
