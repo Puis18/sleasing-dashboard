@@ -1644,7 +1644,7 @@ body.drill-open{overflow:hidden;}
     const p = location.pathname;
     const base = p.endsWith('/') ? p + 'index' : p.replace(/\.html?$/, '');
     // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-    const url = base + '_data.json.gz?v=20261020093931';
+    const url = base + '_data.json.gz?v=20261020095502';
     const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
     const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
@@ -4836,7 +4836,7 @@ function render(){
   const avgPerDay = k.apps / n_days;
   /* จำนวนคน: เฉพาะพนักงาน EA — ไม่นับดีลเลอร์ทำเคส */
   const uniqueMkt  = new Set(rows.filter(r=>!r.is_leader_as_mkt && r.maker!=='dlr').map(r=>r.marketing_fullname)).size;
-  const _minD=rows.reduce((m,r)=>(r._date&&(!m||r._date<m))?r._date:m,''); window._TGT_NEW=(_minD>='2026-10-01'); const _nTeams=new Set(rows.filter(r=>/^TEAM/.test(r.team_short||'')).map(r=>r.team_short)).size; /* เป้า (ตั้งแต่ ต.ค.): ทั้งหมด = 500/ทีม · พนักงาน CK/BK/AG = 30 × จำนวนพนักงาน · เลือกรายคน = 30 × คน */ const _perHead = state.mkt || state.maker==='emp'; const targetApps = window._TGT_NEW ? (_perHead ? 30*Math.max(uniqueMkt,1) : 500*Math.max(_nTeams,1)) : 20*Math.max(uniqueMkt,1); const _tgtLbl = !window._TGT_NEW ? `20 × ${uniqueMkt} คน` : (_perHead ? `30 × ${uniqueMkt} คน` : `500 × ${_nTeams} ทีม`); const _tgtSub = !window._TGT_NEW ? `${uniqueMkt} mkt × 20` : (_perHead ? `${uniqueMkt} CK/BK/AG × 30` : `${_nTeams} ทีม × 500`);
+  const _minD=rows.reduce((m,r)=>(r._date&&(!m||r._date<m))?r._date:m,''); window._TGT_NEW=(_minD>='2026-10-01'); const _nTeams=new Set(rows.filter(r=>/^TEAM/.test(r.team_short||'')).map(r=>r.team_short)).size; /* เป้า (ตั้งแต่ ต.ค.): ทั้งหมด = 500/ทีม · พนักงาน CK/BK/AG = 30 × จำนวนพนักงาน · เลือกรายคน = 30 × คน */ const _perHead = state.mkt || state.maker==='emp'; /* ร้านทำเคส: เป้าทีม = 500 − 30×CK/BK/AG ของทีม (ขั้นต่ำ 50) — นับคนจากข้อมูลที่ไม่กรองผู้ทำเคส */ if(state.maker==='dlr'){const _sv=state.maker;state.maker='';const EM={};getFiltered().forEach(r=>{if(/^TEAM/.test(r.team_short||'')&&r.marketing_fullname&&!r.is_leader_as_mkt&&r.maker!=='dlr'){(EM[r.team_short]||(EM[r.team_short]=new Set())).add(r.marketing_fullname)}});state.maker=_sv;window._DLR_EM=EM;} const _dlrT=t=>Math.max(500-30*((window._DLR_EM&&window._DLR_EM[t])?window._DLR_EM[t].size:0),50); window._dlrT=_dlrT; const _dlrTeams=[...new Set(rows.filter(r=>/^TEAM/.test(r.team_short||'')).map(r=>r.team_short))]; const targetApps = window._TGT_NEW ? (_perHead ? 30*Math.max(uniqueMkt,1) : state.maker==='dlr' ? Math.max(_dlrTeams.reduce((s,t)=>s+_dlrT(t),0),1) : 500*Math.max(_nTeams,1)) : 20*Math.max(uniqueMkt,1); const _tgtLbl = !window._TGT_NEW ? `20 × ${uniqueMkt} คน` : (_perHead ? `30 × ${uniqueMkt} คน` : state.maker==='dlr' ? `ร้านทำเคส (500 − 30×คน ต่อทีม) ${fmtInt(targetApps)}` : `500 × ${_nTeams} ทีม`); const _tgtSub = !window._TGT_NEW ? `${uniqueMkt} mkt × 20` : (_perHead ? `${uniqueMkt} CK/BK/AG × 30` : state.maker==='dlr' ? `${_dlrTeams.length} ทีม · 500 − 30×CK/BK/AG (ขั้นต่ำ 50)` : `${_nTeams} ทีม × 500`);
   const achievePct = k.apps/targetApps*100;
   const achieveClr = achievePct>=100?'green':achievePct>=80?'gold':'red';
 
@@ -5101,7 +5101,7 @@ function render(){
     const teamRows = team.map(t=>{
       const _leader=(t.leader||'').trim();
       const _nMkt=(_teamMktMap[t.key]?.size)||t.unique_mkt||0;
-      return {...t, _leader, _nMkt, _ach:((window._TGT_NEW && state.maker!=='emp')?t.apps/500*100:_achvGrp(t.apps,_teamMktMap[t.key])), _apm:_nMkt?(t.apps/_nMkt):0};
+      return {...t, _leader, _nMkt, _ach:((window._TGT_NEW && state.maker==='dlr')?t.apps/window._dlrT(t.key)*100:(window._TGT_NEW && state.maker!=='emp')?t.apps/500*100:_achvGrp(t.apps,_teamMktMap[t.key])), _apm:_nMkt?(t.apps/_nMkt):0};
     });
     smartTable({
       tableId:'teamTable', controlsHostId:'teamCtrl',
