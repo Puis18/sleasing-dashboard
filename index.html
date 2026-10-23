@@ -512,6 +512,10 @@ header{
 /* ── SECTION TITLES ── */
 /* ซ่อนกราฟซ้ำ (ข้อมูลเดียวกับตารางด้านล่าง): Top 15 Teams, Top 15 Provinces */
 #teamAppsCard,#pvChartCard,#dailyVolDCard,#teamAttachCard,#insPieCard{display:none!important;}
+/* เมื่อเหลือการ์ดเดียวในแถว ให้เต็มความกว้าง */
+.stack:has(>#teamAppsCard),.stack:has(>#pvChartCard),.stack:has(>#dailyVolDCard){grid-template-columns:1fr!important;}
+/* แท็บ Insurance: ส่วน CBUBB ว่างทั้งแถว → ซ่อนหัวข้อ/แถว/เส้นคั่น */
+#cbubbTitle,.stack:has(>#insPieCard),.stack:has(>#insPieCard)+.divider{display:none!important;}
 .section-title{
   font-size:12.5px;font-weight:800;margin:18px 2px 8px;color:var(--navy);
   text-transform:uppercase;letter-spacing:.6px;
@@ -1646,7 +1650,7 @@ body.drill-open{overflow:hidden;}
     const p = location.pathname;
     const base = p.endsWith('/') ? p + 'index' : p.replace(/\.html?$/, '');
     // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-    const url = base + '_data.json.gz?v=20261023031332';
+    const url = base + '_data.json.gz?v=20261023032808';
     const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
     const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
