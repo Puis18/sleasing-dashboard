@@ -511,7 +511,7 @@ header{
 
 /* ── SECTION TITLES ── */
 /* ซ่อนกราฟซ้ำ (ข้อมูลเดียวกับตารางด้านล่าง): Top 15 Teams, Top 15 Provinces */
-#teamAppsCard,#pvChartCard{display:none!important;}
+#teamAppsCard,#pvChartCard,#dailyVolDCard,#teamAttachCard,#insPieCard{display:none!important;}
 .section-title{
   font-size:12.5px;font-weight:800;margin:18px 2px 8px;color:var(--navy);
   text-transform:uppercase;letter-spacing:.6px;
@@ -1226,7 +1226,7 @@ body.drill-open{overflow:hidden;}
           <tbody id="dealerTable"></tbody>
         </table></div>
       </div>
-      <div class="card chart-card">
+      <div class="card chart-card" id="dailyVolDCard">
         <div style="font-weight:700;font-size:12px;color:var(--navy);margin-bottom:2px">Daily Contract Volume</div>
         <div style="font-size:10.5px;color:var(--muted);margin-bottom:8px">จำนวนเคสและยอด Finance รายวัน</div>
         <div class="chart-wrap med"><canvas id="dailyVolumeChartD"></canvas></div>
@@ -1460,7 +1460,7 @@ body.drill-open{overflow:hidden;}
 
     <div class="section-title" id="cbubbTitle"><span class="bar"></span>🛡️ Applications — CBUBB Mobile Care</div>
     <div class="stack">
-      <div class="card chart-card"><div class="chart-wrap short"><canvas id="insurancePie"></canvas></div></div>
+      <div class="card chart-card" id="insPieCard"><div class="chart-wrap short"><canvas id="insurancePie"></canvas></div></div>
       <div class="card chart-card" id="teamAttachCard">
         <div class="chart-wrap tall" id="teamAttachWrap" style="position:relative;">
           <canvas id="teamAttach"></canvas>
@@ -1646,7 +1646,7 @@ body.drill-open{overflow:hidden;}
     const p = location.pathname;
     const base = p.endsWith('/') ? p + 'index' : p.replace(/\.html?$/, '');
     // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-    const url = base + '_data.json.gz?v=20261023030650';
+    const url = base + '_data.json.gz?v=20261023031332';
     const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
     const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
