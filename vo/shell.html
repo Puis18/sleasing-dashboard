@@ -5571,6 +5571,21 @@ rebuildAll();
 render();
 _initProductivityControls();
 updateFbarDot();
+
+;(function () {
+  const keep = (sel, key, test) => {
+    if (!sel) return;
+    const saved = state[key];
+    [...sel.options].forEach(o => { if (!o.value) return; state[key] = o.value; if (!ALL.some(test)) o.remove(); });
+    state[key] = saved;
+    if (![...sel.options].some(o => o.value === sel.value)) sel.value = '';
+  };
+  const pruneAll = () => { keep(fBU, 'bu', buMatch); keep(fAM, 'am', amMatch); keep(fHub, 'hub', hubMatch); };
+  const _rm = rebuildRM, _hub = rebuildHub;
+  rebuildRM = function () { _rm.apply(this, arguments); keep(fAM, 'am', amMatch); };
+  rebuildHub = function () { _hub.apply(this, arguments); keep(fHub, 'hub', hubMatch); };
+  pruneAll();
+})();
 </script>
-<a href="https://puis18.github.io/sl-virtual-office/" style="position:fixed;right:14px;bottom:78px;z-index:9999;background:#1E3365;color:#fff;padding:10px 16px;border-radius:999px;font:600 14px sans-serif;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.2)">← กลับออฟฟิศ</a></body>
+<a href="https://puis18.github.io/sl-virtual-office/" style="position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:9999;background:#9F1C33;color:#fff;padding:9px 18px;border-radius:999px;font:600 14px sans-serif;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.25);white-space:nowrap">← กลับล็อบบี้</a></body>
 </html>
