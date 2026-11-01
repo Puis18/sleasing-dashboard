@@ -1629,6 +1629,7 @@ body.drill-open{overflow:hidden;}
     await new Promise(r => document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', r) : r());
     window.__DASHBOARD_DATA__ = window.__VO_PAYLOAD__;
     if (!window.__DASHBOARD_DATA__) throw new Error('กรุณาเปิดผ่าน S Leasing Virtual Office');
+    window.__DASHBOARD_DATA__.records = window.__DASHBOARD_DATA__.records.filter(r => !r._snap);   // ภาพสิ้นเดือนใช้เฉพาะ V2
   } catch (e) {
     document.body.innerHTML = '<div style="padding:2rem;font-family:sans-serif;color:#b91c1c;max-width:900px;margin:2rem auto"><h2>⚠️ โหลดข้อมูล dashboard ไม่สำเร็จ</h2><p>' + (e && e.message || e) + '</p><p style="color:#64748b;font-size:0.9rem">หน้านี้ต้องเปิดผ่าน HTTP/HTTPS (เช่น GitHub Pages) ไม่สามารถเปิดจากไฟล์ file:// ได้โดยตรง</p></div>';
     return;
