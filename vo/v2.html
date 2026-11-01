@@ -464,11 +464,11 @@ function incCopy(){
 (async()=>{try{const h=new Date().getHours();hi.textContent=(h<12?'สวัสดีตอนเช้า':h<17?'สวัสดีตอนบ่าย':'สวัสดีตอนเย็น')+' 👋';
  const D=window.__VO_PAYLOAD__;if(!D)throw new Error('กรุณาเปิดผ่าน S Leasing ออฟฟิศ');
  MI=D.mkt_info||{};Object.keys(HUB_INFO).forEach(k=>LEAD.add(nm(HUB_INFO[k].rm)));D.records.forEach(r=>{if(r.team_leader_fullname)LEAD.add(nm(r.team_leader_fullname))});
- ALL=D.records;{const SN=new Set(ALL.filter(r=>r._snap).map(r=>r._snap));window.__SNAP__=SN;ALL=ALL.filter(r=>r._snap||!SN.has(r._year+'-'+r._month));}
+ ALL=D.records;
  let mx='';ALL.forEach(r=>{if(r._date&&r._date>mx)mx=r._date});YEAR=mx.slice(0,4);S.m=mx.slice(5,7);
  const ms=[...new Set(ALL.filter(r=>r._year===YEAR).map(r=>r._month))].sort();
  if(new Set(ALL.map(r=>amOf(r.team_short||''))).size<2)$('bMy').style.display='none';
- $('fMO').innerHTML=ms.map(m=>`<option value="${m}">${TH[+m]} ${YEAR}</option>`).join('');[...$('fMO').options].forEach(o=>{if(window.__SNAP__.has(YEAR+'-'+o.value))o.textContent+=' · ปิดเดือน'});R();
+ $('fMO').innerHTML=ms.map(m=>`<option value="${m}">${TH[+m]} ${YEAR}</option>`).join('');R();
  try{if(sessionStorage.getItem('slpage')==='in'){sessionStorage.removeItem('slpage');document.querySelector('.tab[data-p="in"]').click()}}catch(_){}
 }catch(e){$('sub').textContent='โหลดข้อมูลไม่สำเร็จ: '+e.message}})();
 
