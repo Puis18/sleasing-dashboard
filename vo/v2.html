@@ -247,9 +247,10 @@ function R(){
   if(isStaff(r)){const k=r.marketing_fullname,q=P[k]||(P[k]={t:t,n:0,f:0,mo:0,ins:0,l3:0});q.n++;q.f+=r.finance_amt||0;if(mo){q.mo++;if(ins)q.ins++}if(r._date===L||r._date===addD(L,-1)||r._date===addD(L,-2))q.l3++}});
  const newT=+S.m>=10&&+YEAR>=2026,teams=Object.keys(T).filter(t=>/^TEAM/.test(t));
  const uMkt=new Set(rows.filter(r=>!r.is_leader_as_mkt&&r.maker!=='dlr').map(r=>r.marketing_fullname)).size;
- /* เป้าตั้งแต่ ต.ค.: ทั้งหมด 500/ทีม · พนักงาน 30×CK/BK/AG ของทีม · ร้านทำเคส = 500−30×CK/BK/AG (ขั้นต่ำ 50) — นับคนจากข้อมูลไม่กรองผู้ทำเคส */
+ /* เป้า: ต.ค. 500/ทีม · ตั้งแต่ พ.ย. 1000/ทีม (TT) · พนักงาน 30×CK/BK/AG ของทีม · ร้านทำเคส = TT−30×CK/BK/AG (ขั้นต่ำ 50) — นับคนจากข้อมูลไม่กรองผู้ทำเคส */
  const EM={};{const sv=S.mk;S.mk='';ALL.forEach(r=>{if(r._year===YEAR&&r._month===S.m&&pass(r)&&r.marketing_fullname&&!r.is_leader_as_mkt&&r.maker!=='dlr'){const t=r.team_short||'-';(EM[t]||(EM[t]=new Set())).add(r.marketing_fullname)}});S.mk=sv}
- const nE=t=>EM[t]?EM[t].size:0,tT=t=>!newT?20*Math.max(T[t].mk.size,1):S.mk==='emp'?30*Math.max(nE(t),1):S.mk==='dlr'?Math.max(500-30*nE(t),50):500;
+ const TT=(+YEAR>2026||+S.m>=11)?1000:500;
+ const nE=t=>EM[t]?EM[t].size:0,tT=t=>!newT?20*Math.max(T[t].mk.size,1):S.mk==='emp'?30*Math.max(nE(t),1):S.mk==='dlr'?Math.max(TT-30*nE(t),50):TT;
  const tgt=newT?Math.max(teams.reduce((s,t)=>s+tT(t),0),1):20*Math.max(uMkt,1),pT=newT?30:20;
  const ach=pc(A.n,tgt),fc=isCur?A.n/day*dim:A.n,left=dim-day,need=tgt>A.n&&left>0?(tgt-A.n)/left:0;
  /* yesterday vs same day last month */
@@ -286,7 +287,7 @@ function R(){
  const lab=[...new Set([0,Math.floor((ds.length-1)/2),ds.length-1])];
  cD.innerHTML=`<defs><linearGradient id="ar" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--navy)" stop-opacity=".28"/><stop offset="1" stop-color="var(--navy)" stop-opacity="0"/></linearGradient></defs>`+`<path d="M${Ln} L${Pp.at(-1)[0]},195 L${Pp[0][0]},195Z" fill="url(#ar)"/><path d="M${Ln}" fill="none" stroke="var(--navy)" stroke-width="2.5" stroke-linejoin="round"/>`+Pp.map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="9" fill="transparent" data-t="${dl(ds[i])}: ${f(dv[i])} สัญญา"/>`).join('')+`<circle cx="${X}" cy="${Y}" r="6" fill="var(--red)" stroke="var(--card)" stroke-width="3"/><rect x="${Math.min(Math.max(X-28,0),544)}" y="${Y-32}" width="56" height="19" rx="9.5" fill="var(--red)"/><text x="${Math.min(Math.max(X,28),572)}" y="${Y-18.5}" text-anchor="middle" font-size="11" fill="#fff">${f(dmx)}</text>`+lab.map(i=>`<text x="${sx(i)}" y="215" text-anchor="middle" font-size="11" fill="var(--mut)">${dl(ds[i])}</text>`).join('')}else cD.innerHTML='<text x="300" y="115" text-anchor="middle" fill="var(--mut)">ไม่มีข้อมูล</text>'}
  /* gauge */
- {const a=Math.min(ach,150)/150,ang=Math.PI*(1-Math.min(exp,150)/150);tgl.textContent=newT?(S.mk==='emp'?`30 × ${teams.reduce((s,t)=>s+nE(t),0)} คน = ${f(tgt)}`:S.mk==='dlr'?`ร้าน: 500 − 30×คน · ${f(tgt)}`:(S.tm?'เป้า 500/ทีม':`500 × ${teams.length} ทีม`)):`20 × ${uMkt} คน`;
+ {const a=Math.min(ach,150)/150,ang=Math.PI*(1-Math.min(exp,150)/150);tgl.textContent=newT?(S.mk==='emp'?`30 × ${teams.reduce((s,t)=>s+nE(t),0)} คน = ${f(tgt)}`:S.mk==='dlr'?`ร้าน: ${TT} − 30×คน · ${f(tgt)}`:(S.tm?`เป้า ${TT}/ทีม`:`${TT} × ${teams.length} ทีม`)):`20 × ${uMkt} คน`;
  cG.innerHTML=`<path d="M20 105 A80 80 0 0 1 180 105" fill="none" stroke="var(--chip)" stroke-width="16" stroke-linecap="round"/><path d="M20 105 A80 80 0 0 1 180 105" fill="none" stroke="${col(pc(ach,exp))}" stroke-width="16" stroke-linecap="round" pathLength="100" stroke-dasharray="${a*100} 100"/><line x1="${100+92*Math.cos(ang)}" y1="${105-92*Math.sin(ang)}" x2="${100+68*Math.cos(ang)}" y2="${105-68*Math.sin(ang)}" stroke="var(--ink)" stroke-width="2.5"/><text x="100" y="98" text-anchor="middle" font-size="26" font-weight="700" fill="var(--ink)">${ach.toFixed(0)}%</text>`;
  gl.textContent=`${f(A.n)} / ${f(tgt)} สัญญา · ขีดดำ = ควรได้ ${exp.toFixed(0)}% ณ วันที่ ${day}`}
  /* dots + top5 */
@@ -311,7 +312,7 @@ function R(){
  /* staff table */
  eml.textContent=`${Object.keys(P).length} คน · เป้า ${pT} สัญญา/คน · ควรได้ ณ วันนี้ ${exS} (ไม่นับ TM/Hub RM และเคสร้านทำ)`;
  TB.em.rows=Object.keys(P).map(k=>{const q=P[k];return{'พนักงาน':nk(k),'ทีม':sh(q.t),'สัญญา':q.n,'% Achieve':+pc(q.n,pT).toFixed(1),'ขาดจากที่ควรได้':Math.max(0,exS-q.n),'คาดสิ้นเดือน':Math.round(isCur?q.n/day*dim:q.n),'%Mobile Care':+pc(q.ins,q.mo).toFixed(1),'ยอดจัด':Math.round(q.f)}});drawTB('em');
- note.textContent=`ข้อมูลชุดเดียวกับ Dashboard หลัก · เป้า: ก่อน ต.ค. 20 สัญญา/คน, ตั้งแต่ ต.ค. ทั้งหมด 500 สัญญา/ทีม · พนักงาน 30 × CK/BK/AG · ร้านทำเคส 500 − 30 × CK/BK/AG (ขั้นต่ำ 50/ทีม) · %Mobile Care = สัญญาที่มีประกัน ÷ สัญญามือถือ · สี: % Achieve เทียบที่ควรได้ ณ วันนี้ (เขียว ≥100%, เหลือง 80–99%, แดง <80%) · %Mobile Care (เขียว ≥80%, เหลือง 60–79%, แดง <60%) · % ร้านทำ (เขียว ≤50%, เหลือง 51–70%, แดง >70%) · ดูรายละเอียด Dealer/VAT/Hub Master/ส่งออกรายสัญญาได้ที่ "รายละเอียดเต็ม"`;
+ note.textContent=`ข้อมูลชุดเดียวกับ Dashboard หลัก · เป้า: ก่อน ต.ค. 20 สัญญา/คน, ต.ค. 500 สัญญา/ทีม, ตั้งแต่ พ.ย. 1,000 สัญญา/ทีม · พนักงาน 30 × CK/BK/AG · ร้านทำเคส เป้าทีม − 30 × CK/BK/AG (ขั้นต่ำ 50/ทีม) · %Mobile Care = สัญญาที่มีประกัน ÷ สัญญามือถือ · สี: % Achieve เทียบที่ควรได้ ณ วันนี้ (เขียว ≥100%, เหลือง 80–99%, แดง <80%) · %Mobile Care (เขียว ≥80%, เหลือง 60–79%, แดง <60%) · % ร้านทำ (เขียว ≤50%, เหลือง 51–70%, แดง >70%) · ดูรายละเอียด Dealer/VAT/Hub Master/ส่งออกรายสัญญาได้ที่ "รายละเอียดเต็ม"`;
  CTX={L,pd,cL,cP,dw,A,tgt,ach,exp,need,fc,fcp,day,dim,T,P,teams,z0,z3,newT,isCur,pT,exS,scope,tT};
  try{incRender({L,day,dim,isCur})}catch(e){console.warn("incentive",e)}
 }
