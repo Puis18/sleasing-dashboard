@@ -743,7 +743,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 .pill{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10.5px;font-weight:600;}
 .pill.green{background:#DCFCE7;color:#166534;}
 /* ตาราง Team: % ACHIEVE TARGET แบบแถบ + เส้นจังหวะเวลา (06/11/2026) */
-#teamTable td.achc,#regionTable td.achc,#districtTable td.achc{min-width:200px;}
+#teamTable td.achc,#geoTreeBody td.achc{min-width:200px;}
 .ach-wrap{display:flex;align-items:center;gap:10px;}
 .ach-bar{position:relative;flex:1 1 auto;height:8px;border-radius:9999px;background:#E2E8F0;min-width:90px;}
 .ach-fill{height:8px;border-radius:9999px;}
@@ -753,8 +753,8 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 .ach-val.ok,.ach-legend .ok{color:#15803D;}.ach-val.mid,.ach-legend .mid{color:#A16207;}.ach-val.low,.ach-legend .low{color:#B91C1C;}
 .ach-legend{display:inline-flex;flex-wrap:wrap;gap:12px;margin-right:8px;font-weight:700;}
 .ach-legend span{display:inline-flex;align-items:center;gap:4px;}
-#teamTable td.tm-name b{display:block;}
-#teamTable td.tm-name small{display:block;color:var(--muted);font-size:11px;line-height:1.4;}
+#teamTable td.tm-name b,#lagTable td.tm-name b{display:block;}
+#lagTable td.tm-name small,#teamTable td.tm-name small{display:block;color:var(--muted);font-size:11px;line-height:1.4;}
 .pill.amber{background:#FEF3C7;color:#92400E;}
 .pill.red  {background:#FEE2E2;color:#991B1B;}
 .pill.grey {background:#E5E7EB;color:#374151;}
@@ -1033,6 +1033,20 @@ tbody tr:hover,.ins-tbl tbody tr:hover td{background:var(--row-hover);}
 .kpi-delta.up,.kpi-pace.up b{color:#15803D;}.kpi-delta.down,.kpi-pace.down b{color:#B91C1C;}.kpi-delta.flat{color:var(--muted);}
 .kpi-cmp-note{font-size:11px;color:var(--muted);margin:8px 2px 0;}
 .kpi-cmp-note:empty{display:none;}
+/* ── 06/11/2026: Portfolio — ถ้ามีไม่เกิน 2 แถว ซ่อนกราฟ ให้ตารางเต็มการ์ด ── */
+.pa-card:not(:has(.pa-table tbody tr:nth-child(3))) .pa-chart-side{display:none;}
+.pa-card:not(:has(.pa-table tbody tr:nth-child(3))) .pa-body{grid-template-columns:1fr;}
+/* ระยะผ่อน: ตาราง 5 คอลัมน์ → กราฟอยู่ใต้ตาราง */
+#anaTermPane .pa-body{grid-template-columns:1fr;}
+#anaTermPane .pa-chart-side .chart-wrap{height:200px;}
+/* ร้านผสม: พับเก็บ */
+.mix-det>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.mix-det>summary::-webkit-details-marker{display:none;}
+.mix-det>summary::before{content:"▸";color:var(--muted);}
+.mix-det[open]>summary::before{content:"▾";}
+.mix-det:not([open])>summary{margin-bottom:0;}
+.mix-hint{font-weight:500;font-size:11px;color:var(--muted);}
+.mix-det[open] .mix-hint{display:none;}
 /* โฟกัสด้วยคีย์บอร์ดให้เห็นชัด */
 button:focus-visible,select:focus-visible,input:focus-visible,.pnav-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
 button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
@@ -1205,6 +1219,11 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
       <div style="font-size:11px;color:var(--muted);margin-bottom:10px">จำนวนเคสและยอด Finance รายวัน</div>
       <div class="chart-wrap med"><canvas id="dailyVolumeChart"></canvas></div>
     </div>
+    <div class="card chart-card" style="margin-top:12px">
+      <div style="font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:2px">Monthly Contract Volume</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">จำนวนเคสและยอด Finance รายเดือน</div>
+      <div class="chart-wrap med"><canvas id="monthlyVolumeChartP"></canvas></div>
+    </div>
 
     <div class="section-title"><span class="bar"></span>🔑 Top Takeaways</div>
     <div class="card"><ul class="takeaway-list" id="takeaways"></ul></div>
@@ -1237,12 +1256,6 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
       </div>
     </div>
 
-    <div class="card chart-card" style="margin-top:12px">
-      <div style="font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:2px">Monthly Contract Volume</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">จำนวนเคสและยอด Finance รายเดือน</div>
-      <div class="chart-wrap med"><canvas id="monthlyVolumeChartP"></canvas></div>
-    </div>
-
     <div class="divider"></div>
 
     <div class="section-title"><span class="bar"></span>📱 <span id="aaTitle">Apple vs Android</span></div>
@@ -1258,39 +1271,40 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
     <div class="divider"></div>
 
     <div class="section-title"><span class="bar"></span>🗺️ Region &amp; District</div>
-    <div class="tabs" id="geoTabs">
-      <div class="tab active" data-target="region">Region</div>
-      <div class="tab" data-target="district">District</div>
-    </div>
-    <div class="geo-pane" id="region-pane">
-      <div class="card">
-        <div id="regionCtrl"></div>
-        <div class="table-wrap"><table>
-          <thead><tr>
-            <th>Region</th><th class="num">Apps</th><th class="num">Finance ฿</th>
-            <th class="num">% ACHIEVE TARGET</th>
-            <th class="num">คน</th><th class="num">Productivity</th>
-            <th class="num">%Mobile Care</th>
-          </tr></thead>
-          <tbody id="regionTable"></tbody>
-        </table></div>
-        <div class="cm-note" id="regionNote" style="display:none"></div>
+    <div class="card">
+      <div class="dm-ctrl" id="geoCtrl">
+        <span class="dm-ctrl-lb">Region → District:</span>
+        <button type="button" class="dm-tg dm-exp" data-geo="open">⊞ กางทั้งหมด</button>
+        <button type="button" class="dm-tg dm-exp" data-geo="close">⊟ ยุบทั้งหมด</button>
       </div>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>Region / District</th><th class="num">Apps</th><th class="num">Finance ฿</th>
+          <th class="num">% ACHIEVE TARGET</th>
+          <th class="num">คน</th><th class="num">Productivity</th>
+          <th class="num">%Mobile Care</th>
+        </tr></thead>
+        <tbody id="geoTreeBody"></tbody>
+      </table></div>
+      <div class="cm-note" id="regionNote" style="display:none"></div>
+      <div class="cm-note">คลิกแถว Region เพื่อกาง/ยุบ District · ตัวเลขแต่ละแถวใช้สูตรเดิมของตาราง Region / District · District ที่มีเคสใน 2 Region จะแยกตัวเลขตาม Region</div>
     </div>
-    <div class="geo-pane" id="district-pane" style="display:none">
-      <div class="card">
-        <div id="districtCtrl"></div>
-        <div class="table-wrap"><table>
-          <thead><tr>
-            <th>District</th><th class="num">Apps</th><th class="num">Finance ฿</th>
-            <th class="num">% ACHIEVE TARGET</th>
-            <th class="num">คน</th><th class="num">Productivity</th>
-            <th class="num">%Mobile Care</th>
-          </tr></thead>
-          <tbody id="districtTable"></tbody>
-        </table></div>
-        <div class="cm-note" id="districtNote" style="display:none"></div>
-      </div>
+
+    <div class="divider"></div>
+
+    <!-- ── ระยะเวลาสมัคร → ทำสัญญา (เพิ่ม 06/11/2026) ── -->
+    <div class="section-title"><span class="bar"></span>⏱️ ระยะเวลาสมัคร → ทำสัญญา</div>
+    <div class="card">
+      <div id="lagSum" class="cm-kpis"></div>
+      <div id="lagCtrl"></div>
+      <div class="table-wrap"><table class="table-resp">
+        <thead><tr>
+          <th>Team</th><th class="num">Apps</th><th class="num">เฉลี่ย (วัน)</th>
+          <th class="num">ภายในวันเดียว</th><th class="num">เกิน 3 วัน</th>
+        </tr></thead>
+        <tbody id="lagTable"></tbody>
+      </table></div>
+      <div class="cm-note">นับจากวันสมัคร (appl date) ถึงวันทำสัญญา · ตารางแสดงทีมที่มีอย่างน้อย 10 เคส เรียงทีมที่ใช้เวลาเฉลี่ยนานสุดก่อน · ใช้ตัวกรองด้านบนทุกตัว</div>
     </div>
 
     <div class="divider"></div>
@@ -1366,6 +1380,24 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
 
     <div class="divider"></div>
 
+    <!-- ── ร้านที่หยุดส่งเคส (เพิ่ม 06/11/2026) ── -->
+    <div class="section-title"><span class="bar"></span>💤 ร้านที่หยุดส่งเคส</div>
+    <div class="card">
+      <div id="dormSum" class="cm-note" style="margin:0 0 8px"></div>
+      <div id="dormCtrl"></div>
+      <div class="table-wrap"><table class="table-resp">
+        <thead><tr>
+          <th>ร้านค้า</th><th>ทีม</th><th class="num">เคส 90 วันก่อนหน้า</th>
+          <th class="num">เฉลี่ย/เดือน</th><th class="num">เคสล่าสุด</th><th class="num">เงียบมาแล้ว</th>
+        </tr></thead>
+        <tbody id="dormTable"></tbody>
+      </table></div>
+      <div class="cm-note">ร้านที่มีอย่างน้อย 5 เคสในช่วง 90 วันก่อนหน้า แต่ไม่มีเคสเลยใน 30 วันล่าสุด (นับถึงวันที่ข้อมูลล่าสุด) ·
+        ใช้ตัวกรองด้านบนทุกตัว <b>ยกเว้น ปี / ไตรมาส / เดือน</b> เพราะต้องดูย้อนหลังเสมอ</div>
+    </div>
+
+    <div class="divider"></div>
+
     <!-- ── ร้าน VAT vs No VAT ── -->
     <div class="section-title"><span class="bar"></span>🧾 ร้าน VAT vs No VAT</div>
     <div class="card">
@@ -1389,8 +1421,8 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
         ตัวเลขทั้งหมดเป็นไปตามตัวกรองด้านบน · คลิกแถวเพื่อเจาะลงไปชั้นถัดไป</div>
     </div>
 
-    <div class="card" style="margin-top:12px">
-      <div class="vat-sub" style="margin-top:0">⚠️ ร้านผสม — มีทั้งเคส VAT และเคส No VAT (ไว้ตรวจสอบป้ายประเภทร้าน)</div>
+    <details class="card mix-det" style="margin-top:12px">
+      <summary class="vat-sub" style="margin-top:0">⚠️ ร้านผสม — มีทั้งเคส VAT และเคส No VAT (ไว้ตรวจสอบป้ายประเภทร้าน) <span class="mix-hint">กดเพื่อดู</span></summary>
       <div id="vatMixSum" class="cm-note" style="margin:0 0 8px"></div>
       <div class="table-wrap vat-mix-wrap"><table>
         <thead><tr>
@@ -1402,7 +1434,7 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
       </table></div>
       <div class="cm-note">เรียงจากจำนวนเคสข้างน้อยมากไปน้อย — ร้านที่ % ข้างน้อยสูง (ใกล้ 50%) ควรตรวจสอบก่อน ·
         คลิกชื่อร้านเพื่อกรองดูเฉพาะร้านนั้น</div>
-    </div>
+    </details>
 
     <div class="divider"></div>
 
@@ -1507,6 +1539,41 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
           <div class="pa-chart-side">
             <div class="chart-wrap"><canvas id="occChart"></canvas></div>
           </div>
+        </div>
+      </div>
+
+      <!-- ระยะผ่อน (เพิ่ม 06/11/2026) -->
+      <div class="card pa-card" id="anaTermPane">
+        <div class="pa-hdr">🗓️ ระยะผ่อน (งวด)</div>
+        <div class="pa-body">
+          <div class="pa-tbl-side">
+            <div id="termCtrl"></div>
+            <div class="table-wrap pa-table"><table>
+              <thead><tr>
+                <th>ระยะผ่อน</th><th class="num">Apps</th><th class="num">%Share</th>
+                <th class="num">Finance ฿</th><th class="num">ค่างวดเฉลี่ย</th>
+              </tr></thead>
+              <tbody id="termTable"></tbody>
+            </table></div>
+          </div>
+          <div class="pa-chart-side">
+            <div class="chart-wrap"><canvas id="termChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- แคมเปญ / แพ็กเกจเงินดาวน์ (เพิ่ม 06/11/2026) -->
+      <div class="card pa-card" id="anaCampPane">
+        <div class="pa-hdr">🏷️ แคมเปญ / แพ็กเกจเงินดาวน์</div>
+        <div class="pa-tbl-side">
+          <div id="campCtrl"></div>
+          <div class="table-wrap pa-table"><table>
+            <thead><tr>
+              <th>แคมเปญ</th><th class="num">Apps</th><th class="num">%Share</th>
+              <th class="num">Finance ฿</th><th class="num">ดาวน์เฉลี่ย</th>
+            </tr></thead>
+            <tbody id="campTable"></tbody>
+          </table></div>
         </div>
       </div>
 
@@ -2758,15 +2825,6 @@ document.querySelectorAll('.pnav-btn').forEach(btn=>{
   });
 });
 
-/* ── Geo tabs ── */
-document.querySelectorAll('#geoTabs .tab').forEach(t=>{
-  t.addEventListener('click',()=>{
-    document.querySelectorAll('#geoTabs .tab').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    document.getElementById('region-pane').style.display   = t.dataset.target==='region'  ?'':'none';
-    document.getElementById('district-pane').style.display = t.dataset.target==='district'?'':'none';
-  });
-});
 
 /* ── Top/Bottom tabs ── */
 (function(){
@@ -4830,6 +4888,135 @@ function _kpiCompare(rows, k, mo, targetApps){
   note.textContent=`▲▼ เทียบกับวันที่ 1–${d} ${MONTH_TH[pm]||pm} ${py} (ช่วงวันเดียวกันของเดือนก่อน ตัวกรองอื่นเหมือนกัน) · % Achieve Target ไม่เทียบ เพราะเป้าแต่ละเดือนต่างกัน`;
 }
 
+/* Region → District: สถานะกาง/ยุบ และการคลิก (06/11/2026) */
+window._geoOpen=window._geoOpen||new Set();
+document.addEventListener('click',e=>{
+  const tr=e.target.closest&&e.target.closest('#geoTreeBody tr[data-geokey]');
+  if(tr && !e.target.closest('.apps-clickable')){ const k=tr.dataset.geokey; window._geoOpen.has(k)?window._geoOpen.delete(k):window._geoOpen.add(k); window._drawGeo&&window._drawGeo(); return; }
+  const b=e.target.closest&&e.target.closest('#geoCtrl [data-geo]');
+  if(b){ window._geoOpen=new Set(b.dataset.geo==='open'?(window._geoAllKeys||[]):[]); window._drawGeo&&window._drawGeo(); }
+});
+
+/* ── ส่วนเพิ่ม 06/11/2026: ระยะผ่อน · แคมเปญ · ร้านที่หยุดส่งเคส · ระยะเวลาสมัคร→ทำสัญญา
+   แสดงผลอย่างเดียว ใช้ agg()/getFiltered() เดิม ── */
+const _dmsCache=new Map();
+function _dms(d){ let v=_dmsCache.get(d); if(v===undefined){ v=Date.parse(d.slice(0,10)); _dmsCache.set(d,v); } return v; }
+function _daysBetween(a,b){ return Math.round((_dms(b)-_dms(a))/86400000); }
+function _renderExtras(rows){
+  const total=rows.length;
+  const share=n=>fmtPct(total?n/total*100:0);
+
+  /* 1) ระยะผ่อน */
+  const term=groupBy(rows.filter(r=>+r.term>0),r=>String(+r.term),(k,rs)=>{
+    const a=agg(rs); return {key:k,n:+k,...a,inst:rs.reduce((x,r)=>x+(+r.installment_amt||0),0)/rs.length};
+  }).sort((a,b)=>a.n-b.n);
+  smartTable({
+    tableId:'termTable', controlsHostId:'termCtrl', rows:term, searchFields:['key'], searchPlaceholder:'ค้นจำนวนงวด…',
+    defaultSort:{key:'n',dir:'asc'}, emptyText:'— ไม่มีข้อมูล —', maxRows:12,
+    columns:[
+      {key:'n', sortKey:r=>r.n, numeric:true, render:t=>`<td>${t.n} งวด</td>`},
+      {key:'apps', sortKey:r=>r.apps, numeric:true, render:t=>`<td class="num">${fmtInt(t.apps)}</td>`},
+      {key:'share', sortKey:r=>r.apps, numeric:true, render:t=>`<td class="num">${share(t.apps)}</td>`},
+      {key:'finance', sortKey:r=>r.finance, numeric:true, render:t=>`<td class="num">${fmtB(t.finance)}</td>`},
+      {key:'inst', sortKey:r=>r.inst, numeric:true, render:t=>`<td class="num">${fmtB(t.inst)}</td>`}
+    ]
+  });
+  dc('termChart');
+  const tEl=document.getElementById('termChart');
+  if(tEl && term.length){
+    const COL=['#1F3864','#2E75B6','#548235','#BF8F00','#E07800','#C00000','#7B3F9E','#20A39E','#E05C8C','#9CA3AF'];
+    charts.termChart=new Chart(tEl,{type:'doughnut',
+      data:{labels:term.map(t=>t.n+' งวด'),datasets:[{data:term.map(t=>t.apps),backgroundColor:term.map((_,i)=>COL[i%COL.length]),borderWidth:2,borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:8,font:{size:10},boxWidth:10}},
+        title:{display:true,text:'ระยะผ่อน (จำนวนเคส)',font:{size:12,weight:'bold'},color:'#1F3864'},
+        tooltip:{callbacks:{label:c=>`${c.label}: ${fmtInt(c.parsed)} (${total?(c.parsed/total*100).toFixed(1):0}%)`}}}}});
+  }
+
+  /* 2) แคมเปญ / แพ็กเกจเงินดาวน์ */
+  const camp=groupBy(rows.filter(r=>r.down_payment_name),r=>r.down_payment_name,(k,rs)=>{
+    const a=agg(rs); return {key:k,...a,avgDown:a.apps?a.down/a.apps:0};
+  });
+  smartTable({
+    tableId:'campTable', controlsHostId:'campCtrl', rows:camp, searchFields:['key'], searchPlaceholder:'ค้นแคมเปญ…',
+    defaultSort:{key:'apps',dir:'desc'}, emptyText:'— ไม่มีข้อมูล —', maxRows:12,
+    columns:[
+      {key:'key', sortKey:r=>r.key, render:c=>`<td>${_esc(c.key)}</td>`},
+      {key:'apps', sortKey:r=>r.apps, numeric:true, render:c=>_appsCell(c.apps,'all','down_payment_name',c.key,c.key,'แคมเปญ')},
+      {key:'share', sortKey:r=>r.apps, numeric:true, render:c=>`<td class="num">${share(c.apps)}</td>`},
+      {key:'finance', sortKey:r=>r.finance, numeric:true, render:c=>`<td class="num">${fmtB(c.finance)}</td>`},
+      {key:'avgDown', sortKey:r=>r.avgDown, numeric:true, render:c=>`<td class="num">${fmtB(c.avgDown)}</td>`}
+    ]
+  });
+
+  /* 3) ระยะเวลาสมัคร → ทำสัญญา (รายทีม) */
+  const lagRows=rows.filter(r=>r._appl_date&&r._date);
+  const lagOf=rs=>{let sum=0,same=0,over=0,n=0;
+    rs.forEach(r=>{const d=_daysBetween(r._appl_date,r._date); if(!(d>=0)) return; n++; sum+=d; if(d===0) same++; if(d>3) over++;});
+    return {n,avg:n?sum/n:0,same:n?same/n*100:0,over:n?over/n*100:0};};
+  const all=lagOf(lagRows);
+  const lsum=document.getElementById('lagSum');
+  if(lsum) lsum.innerHTML=all.n?[['เฉลี่ยทั้งหมด',all.avg.toFixed(1)+' วัน','navy'],['ทำสัญญาภายในวันเดียว',fmtPct(all.same),'green'],['เกิน 3 วัน',fmtPct(all.over),'orange']]
+    .map(([l,v,c])=>`<div class="cm-kpi ${c}"><div class="l">${l}</div><div class="v">${v}</div></div>`).join(''):'';
+  const lag=groupBy(lagRows.filter(r=>/^TEAM/.test(r.team_short||'')),r=>r.team_short,(k,rs)=>({key:k,_leader:(rs[0].team_leader_fullname||'').trim(),...lagOf(rs)}))
+    .filter(t=>t.n>=10);
+  smartTable({
+    tableId:'lagTable', controlsHostId:'lagCtrl', rows:lag, searchFields:['key','_leader'], searchPlaceholder:'ค้นทีม / หัวหน้า…',
+    defaultSort:{key:'avg',dir:'desc'}, emptyText:'— ไม่มีข้อมูล —', maxRows:15,
+    columns:[
+      {key:'key', sortKey:r=>r._leader||r.key, render:t=>`<td class="tm-name"><b>${_esc(t._leader||t.key)}</b><small>${_esc(t.key)}</small></td>`},
+      {key:'n', sortKey:r=>r.n, numeric:true, render:t=>_appsCell(t.n,'all','team_short',t.key,t._leader||t.key,'Team · '+t.key)},
+      {key:'avg', sortKey:r=>r.avg, numeric:true, render:t=>`<td class="num"><b>${t.avg.toFixed(1)}</b></td>`},
+      {key:'same', sortKey:r=>r.same, numeric:true, render:t=>`<td class="num">${fmtPct(t.same)}</td>`},
+      {key:'over', sortKey:r=>r.over, numeric:true, render:t=>`<td class="num"><span class="pill ${t.over>20?'red':t.over>10?'amber':'green'}">${fmtPct(t.over)}</span></td>`}
+    ]
+  });
+
+  /* 4) ร้านที่หยุดส่งเคส — ใช้ตัวกรองเดิมทุกตัว ยกเว้นช่วงเวลา (ผลไม่ขึ้นกับช่วงเวลา จึงจำผลไว้ตามตัวกรองอื่น) */
+  const _dk=JSON.stringify(Object.assign({},state,{year:'',quarter:'',month:''}));
+  let dorm, last='';
+  if(window._dormCache && window._dormCache.k===_dk){ ({dorm,last}=window._dormCache); }
+  else {
+  const sv={year:state.year,quarter:state.quarter,month:state.month};
+  let base;
+  try{ state.year=''; state.quarter=''; state.month=''; base=getFiltered(); }
+  finally{ state.year=sv.year; state.quarter=sv.quarter; state.month=sv.month; }
+  base.forEach(r=>{ if(r._date&&r._date>last) last=r._date; });
+  dorm=[];
+  if(last){
+    const ref=_dms(last);
+    const per={};
+    base.forEach(r=>{
+      if(!r._date||!r.dealer_name_en||r.dealer_name_en==='—') return;
+      const ago=Math.round((ref-_dms(r._date))/86400000);
+      const o=per[r.dealer_name_en]||(per[r.dealer_name_en]={recent:0,prior:0,lastD:'',teams:{}});
+      if(ago<30) o.recent++; else if(ago<120){ o.prior++; o.teams[r.team_short||'—']=(o.teams[r.team_short||'—']||0)+1; }
+      if(r._date>o.lastD) o.lastD=r._date;
+    });
+    Object.entries(per).forEach(([k,o])=>{
+      if(o.recent===0 && o.prior>=5){
+        const tm=Object.entries(o.teams).sort((a,b)=>b[1]-a[1])[0];
+        dorm.push({key:k,team:tm?tm[0]:'—',prior:o.prior,perM:o.prior/3,lastD:o.lastD,silent:Math.round((ref-_dms(o.lastD))/86400000)});
+      }
+    });
+  }
+  window._dormCache={k:_dk,dorm,last};
+  }
+  const ds=document.getElementById('dormSum');
+  if(ds) ds.innerHTML=last?`พบ <b>${fmtInt(dorm.length)} ร้าน</b> ที่หยุดส่งเคส · รวมเคสที่หายไป ประมาณ <b>${fmtInt(Math.round(dorm.reduce((x,d)=>x+d.perM,0)))} เคส/เดือน</b> (เทียบค่าเฉลี่ย 90 วันก่อนหน้า) · ข้อมูลล่าสุด ${last}`:'';
+  smartTable({
+    tableId:'dormTable', controlsHostId:'dormCtrl', rows:dorm, searchFields:['key','team'], searchPlaceholder:'ค้นร้าน / ทีม…',
+    defaultSort:{key:'prior',dir:'desc'}, emptyText:'— ไม่มีร้านที่หยุดส่งเคส —', maxRows:15,
+    columns:[
+      {key:'key', sortKey:r=>r.key, render:d=>`<td>${_esc(d.key)}</td>`},
+      {key:'team', sortKey:r=>r.team, render:d=>`<td>${_esc(d.team)}</td>`},
+      {key:'prior', sortKey:r=>r.prior, numeric:true, render:d=>`<td class="num">${fmtInt(d.prior)}</td>`},
+      {key:'perM', sortKey:r=>r.perM, numeric:true, render:d=>`<td class="num">${d.perM.toFixed(1)}</td>`},
+      {key:'lastD', sortKey:r=>r.lastD, render:d=>`<td class="num">${d.lastD}</td>`},
+      {key:'silent', sortKey:r=>r.silent, numeric:true, render:d=>`<td class="num"><span class="pill ${d.silent>60?'red':'amber'}">${d.silent} วัน</span></td>`}
+    ]
+  });
+}
+
 function render(){
   const rows = getFiltered();
   try{ renderVat(rows); }catch(err){ console.error('renderVat', err); }
@@ -5041,29 +5228,39 @@ function render(){
   if(k.apps===0){
     raw.push({c:'red',t:'<b>ไม่พบข้อมูล</b> ที่ตรงกับตัวกรองที่เลือก'});
   } else {
-    raw.push({c:'',t:`ยอดสมัครรวม <b>${fmtInt(k.apps)} เคส</b> มูลค่าไฟแนนซ์ <b>${fmtBM(k.finance)}</b> · สัญญา <b>${fmtBM(k.contract)}</b>`});
+    raw.push({keep:1,c:'',t:`ยอดสมัครรวม <b>${fmtInt(k.apps)} เคส</b> มูลค่าไฟแนนซ์ <b>${fmtBM(k.finance)}</b> · สัญญา <b>${fmtBM(k.contract)}</b>`});
 
-    if(achievePct>=100)      raw.push({c:'green',t:`% Achieve Target: ✅ ทำได้ <b>${fmtPct(achievePct)}</b> — เกินเป้าหมาย ${_tgtLbl}`});
-    else if(achievePct>=80)   raw.push({c:'gold', t:`% Achieve Target: 🟡 ทำได้ <b>${fmtPct(achievePct)}</b> (เป้า ${_tgtLbl} = ${fmtInt(targetApps)} เคส) ใกล้ถึงเป้า ขาดอีก <b>${fmtInt(targetApps-k.apps)} เคส</b>`});
-    else                      raw.push({c:'red',  t:`% Achieve Target: 🔴 ทำได้ <b>${fmtPct(achievePct)}</b> (เป้า ${_tgtLbl} = ${fmtInt(targetApps)} เคส) ยังขาด <b>${fmtInt(targetApps-k.apps)} เคส</b>`});
+    { /* % Achieve Target ตามจังหวะ ณ วันนี้ (06/11/2026) — เกณฑ์เดียวกับการ์ด KPI และตารางทีม
+         ดูหลายเดือน → จังหวะ = 100% = เกณฑ์เดิม */
+      let _mx='',_mn=''; rows.forEach(r=>{const d=r._date||''; if(!d) return; if(!_mx||d>_mx) _mx=d; if(!_mn||d<_mn) _mn=d;});
+      const _one=_mx&&_mx.slice(0,7)===_mn.slice(0,7);
+      const _d=_one?+_mx.slice(8,10):0;
+      const _pc=_one?Math.min(100,_d/new Date(+_mx.slice(0,4),+_mx.slice(5,7),0).getDate()*100):100;
+      const _need=Math.round(targetApps*_pc/100), _gap=_need-k.apps;
+      const _paceTxt=_pc<100?` · ควรได้ ณ วันที่ ${_d} = <b>${fmtPct(_pc)}</b> (${fmtInt(_need)} เคส)`:'';
+      const _tail=_pc<100?(_gap>0?` — ช้ากว่าจังหวะ <b>${fmtInt(_gap)} เคส</b>`:` — ทันจังหวะแล้ว`):'';
+      const _rest=targetApps>k.apps?` · เป้าทั้งเดือน ${_tgtLbl} = ${fmtInt(targetApps)} ยังขาด ${fmtInt(targetApps-k.apps)} เคส`:` · เกินเป้าหมาย ${_tgtLbl}`;
+      const _c=achievePct>=_pc?'green':achievePct>=_pc*0.8?'gold':'red';
+      raw.push({keep:1,c:_c,t:`% Achieve Target: ${_c==='green'?'✅':_c==='gold'?'🟡':'🔴'} ทำได้ <b>${fmtPct(achievePct)}</b>${_paceTxt}${_tail}${_rest}`});
+    }
 
-    raw.push({c:'gold',t:`ยอด Premium (CBUBB Mobile Care): <b>${fmtInt(k.apps_with_ins)} เคส</b> มูลค่า <b>${fmtB(k.protected_)}</b> — Attach Rate (MO) = <b>${fmtPct(mo.attach_rate)}</b> (${fmtInt(mo.apps_with_ins)}/${fmtInt(mo.apps)} เคสมือถือ เฉลี่ย ${fmtB(k.avg_protected)}/เคส)`});
+    raw.push({keep:1,c:'gold',t:`ยอด Premium (CBUBB Mobile Care): <b>${fmtInt(k.apps_with_ins)} เคส</b> มูลค่า <b>${fmtB(k.protected_)}</b> — Attach Rate (MO) = <b>${fmtPct(mo.attach_rate)}</b> (${fmtInt(mo.apps_with_ins)}/${fmtInt(mo.apps)} เคสมือถือ เฉลี่ย ${fmtB(k.avg_protected)}/เคส)`});
 
     // ทีมเก่ง/ต้องเร่ง — แสดงเฉพาะเมื่อไม่ได้เจาะทีมเดียว
     if(!state.team){
       if(bA&&team.length>1) raw.push({c:'green',t:`ทีมขายประกันเก่งสุด: ${bA.key} — Attach Rate <b>${fmtPct(bA.attach_rate)}</b>`});
-      if(wA&&team.length>1) raw.push({c:'red',  t:`ทีมที่ต้องเร่งยอดประกัน: ${wA.key} — Attach Rate เพียง <b>${fmtPct(wA.attach_rate)}</b>`});
+      if(wA&&team.length>1) raw.push({keep:1,c:'red',  t:`ทีมที่ต้องเร่งยอดประกัน: ${wA.key} — Attach Rate เพียง <b>${fmtPct(wA.attach_rate)}</b>`});
     }
     // CK/BK/AG เก่ง/ต้องเร่ง — แสดงเมื่อเจาะทีมเดียว
     if(state.team && mktInTeam.length>1){
       const bMkt=[...mktInTeam].sort((a,b)=>b.attach_rate-a.attach_rate)[0];
       const wMkt=[...mktInTeam].sort((a,b)=>a.attach_rate-b.attach_rate)[0];
       if(bMkt) raw.push({c:'green',t:`CK/BK/AG ขายประกันเก่งสุด: ${bMkt.key} — Attach Rate <b>${fmtPct(bMkt.attach_rate)}</b>`});
-      if(wMkt&&wMkt.key!==bMkt.key) raw.push({c:'red',t:`CK/BK/AG ที่ต้องเร่งยอดประกัน: ${wMkt.key} — Attach Rate เพียง <b>${fmtPct(wMkt.attach_rate)}</b>`});
+      if(wMkt&&wMkt.key!==bMkt.key) raw.push({keep:1,c:'red',t:`CK/BK/AG ที่ต้องเร่งยอดประกัน: ${wMkt.key} — Attach Rate เพียง <b>${fmtPct(wMkt.attach_rate)}</b>`});
     }
 
     const uplift60=((0.60-mo.attach_rate/100)*mo.apps*(k.avg_protected||1650));
-    if(mo.attach_rate<60&&mo.apps>0) raw.push({c:'gold',t:`โอกาสเพิ่ม Premium (MO): ดัน Attach ${fmtPct(mo.attach_rate)} → 60% เพิ่มได้อีก <b>~${fmtB(uplift60)}</b>`});
+    if(mo.attach_rate<60&&mo.apps>0) raw.push({keep:1,c:'gold',t:`โอกาสเพิ่ม Premium (MO): ดัน Attach ${fmtPct(mo.attach_rate)} → 60% เพิ่มได้อีก <b>~${fmtB(uplift60)}</b>`});
 
     // ทีมยอดสูงสุด — ซ่อนเมื่อเจาะทีมเดียว
     if(!state.team && tT&&team.length>1) raw.push({c:'',t:`ทีมยอดสมัครสูงสุด: ${tT.key} จำนวน <b>${fmtInt(tT.apps)} เคส</b>`});
@@ -5074,8 +5271,8 @@ function render(){
     // Dealer items — ซ่อนเมื่อเจาะ Dealer หรือ Showroom เดียว
     if(!state.dealer && !state.showroom){
       if(tD) raw.push({c:'',t:`Dealer อันดับ 1: ${tD.key} <b>${fmtInt(tD.apps)} เคส</b> (${(tD.apps/k.apps*100).toFixed(1)}%)${tD2?', 2: '+tD2.key+' '+fmtInt(tD2.apps)+' เคส':''}${tD3?', 3: '+tD3.key+' '+fmtInt(tD3.apps)+' เคส':''}`});
-      if(t5DPct) raw.push({c:'gold',t:`การกระจุกตัว Dealer: Top 5 = <b>${fmtPct(t5DPct)}</b> — ${t5DPct>40?'⚠️ ความเสี่ยงพึ่งพาร้านใหญ่':'✅ การกระจายตัวดี'}`});
-      if(bDA&&wDA&&bDA.key!==wDA.key) raw.push({c:'green',t:`Dealer Premium เก่งสุด: ${bDA.key} (Attach <b>${fmtPct(bDA.attach_rate)}</b>) | ต้องผลักดัน: ${wDA.key} (${fmtPct(wDA.attach_rate)})`});
+      if(t5DPct) raw.push({keep:t5DPct>40?1:0,c:'gold',t:`การกระจุกตัว Dealer: Top 5 = <b>${fmtPct(t5DPct)}</b> — ${t5DPct>40?'⚠️ ความเสี่ยงพึ่งพาร้านใหญ่':'✅ การกระจายตัวดี'}`});
+      if(bDA&&wDA&&bDA.key!==wDA.key) raw.push({keep:1,c:'green',t:`Dealer Premium เก่งสุด: ${bDA.key} (Attach <b>${fmtPct(bDA.attach_rate)}</b>) | ต้องผลักดัน: ${wDA.key} (${fmtPct(wDA.attach_rate)})`});
     }
 
     // CK/BK/AG ดาวเด่น — ซ่อนเมื่อเจาะ CK/BK/AG คนเดียว
@@ -5083,7 +5280,9 @@ function render(){
 
   }
   // ใส่เลขข้อต่อเนื่องอัตโนมัติ
-  const tw = raw.map((x,i)=>({c:x.c, t:`<b>${i+1}.</b> ${x.t}`}));
+  /* แสดงเฉพาะ 5 ข้อที่ต้องทำอะไรต่อ (06/11/2026) — ข้ออื่นดูได้ในแท็บของมันเอง */
+  const _tw5 = (k.apps===0?raw:raw.filter(x=>x.keep)).slice(0,5);
+  const tw = _tw5.map((x,i)=>({c:x.c, t:`<b>${i+1}.</b> ${x.t}`}));
   document.getElementById('takeaways').innerHTML=tw.map(x=>`<li class="${x.c}">${x.t}</li>`).join('');
 
   /* ── Tables ── */
@@ -5196,21 +5395,6 @@ function render(){
     return {...r, _nMkt, _ach:_achvGrp(r.apps,_regionMktMap[r.key]), _apm:_nMkt?(r.apps/_nMkt):0};
   });
   const _rgS=_achScale(regionRows.map(r=>r._ach));
-  smartTable({
-    tableId:'regionTable', controlsHostId:'regionCtrl',
-    rows: regionRows, searchFields:['key'], searchPlaceholder:'ค้น Region…',
-    defaultSort:{key:'apps',dir:'desc'}, emptyText:'— ไม่มี Region —',
-    columns:[
-      {key:'key',     sortKey:r=>r.key,    render:r=>`<td><b>${_esc(r.key)}</b></td>`},
-      {key:'apps',    sortKey:r=>r.apps,   numeric:true, render:r=>_appsCell(r.apps,'all','region_name_en',r.key,r.key,'Region')},
-      {key:'finance', sortKey:r=>r.finance,numeric:true, render:r=>`<td class="num">${fmtB(r.finance)}</td>`},
-      {key:'ach',     sortKey:r=>r._ach,   numeric:true, render:r=>_achBarCell(r._ach,_rgS)},
-      {key:'nMkt',    sortKey:r=>r._nMkt,  numeric:true, render:r=>`<td class="num">${fmtInt(r._nMkt)}</td>`},
-      {key:'apm',     sortKey:r=>r._apm,   numeric:true, render:r=>`<td class="num">${r._apm.toFixed(1)}</td>`},
-      {key:'attach',  sortKey:r=>r.attach_rate, numeric:true, render:r=>`<td class="num"><span class="pill ${pillCls(r.attach_rate)}">${fmtPct(r.attach_rate)}</span></td>`}
-    ]
-  });
-
   _achNote(_rgS,'regionNote');
 
   const districtRows = district.map(r=>{
@@ -5218,22 +5402,35 @@ function render(){
     return {...r, _nMkt, _ach:_achvGrp(r.apps,_districtMktMap[r.key]), _apm:_nMkt?(r.apps/_nMkt):0};
   });
   const _dsS=_achScale(districtRows.map(r=>r._ach));
-  smartTable({
-    tableId:'districtTable', controlsHostId:'districtCtrl',
-    rows: districtRows, searchFields:['key'], searchPlaceholder:'ค้น District…',
-    defaultSort:{key:'apps',dir:'desc'}, emptyText:'— ไม่มี District —',
-    columns:[
-      {key:'key',     sortKey:r=>r.key,    render:r=>`<td><b>${_esc(r.key)}</b></td>`},
-      {key:'apps',    sortKey:r=>r.apps,   numeric:true, render:r=>_appsCell(r.apps,'all','district_name_en',r.key,r.key,'District')},
-      {key:'finance', sortKey:r=>r.finance,numeric:true, render:r=>`<td class="num">${fmtB(r.finance)}</td>`},
-      {key:'ach',     sortKey:r=>r._ach,   numeric:true, render:r=>_achBarCell(r._ach,_dsS)},
-      {key:'nMkt',    sortKey:r=>r._nMkt,  numeric:true, render:r=>`<td class="num">${fmtInt(r._nMkt)}</td>`},
-      {key:'apm',     sortKey:r=>r._apm,   numeric:true, render:r=>`<td class="num">${r._apm.toFixed(1)}</td>`},
-      {key:'attach',  sortKey:r=>r.attach_rate, numeric:true, render:r=>`<td class="num"><span class="pill ${pillCls(r.attach_rate)}">${fmtPct(r.attach_rate)}</span></td>`}
-    ]
+  /* Region → District แบบกางได้ (06/11/2026) — แทน 2 ตารางเดิม
+     แถว Region = regionRows เดิม · แถว District = agg() + _achvGrp() เดิม จัดกลุ่มภายใน Region */
+  const _geoRows=rows.filter(r=>!HIDDEN_GROUPS.has(r.region_name_en)&&!HIDDEN_GROUPS.has(r.district_name_en));
+  const _geoMkt={};
+  mktRows.forEach(r=>{const kk=r.region_name_en+'\u0001'+r.district_name_en;(_geoMkt[kk]||(_geoMkt[kk]=new Set())).add(r.marketing_fullname);});
+  const _dByR={};
+  groupBy(_geoRows,r=>r.region_name_en+'\u0001'+r.district_name_en,(key,rs)=>{
+      const [rg,ds]=key.split('\u0001');
+      const _set=_geoMkt[key]||new Set();
+      const a=agg(rs); const _nMkt=_set.size||a.unique_mkt||0;
+      (_dByR[rg]||(_dByR[rg]=[])).push({key:ds,...a,_nMkt,_ach:_achvGrp(a.apps,_set),_apm:_nMkt?(a.apps/_nMkt):0});
+      return null;
   });
-
-  _achNote(_dsS,'districtNote');
+  const _drawGeo=()=>{
+    const _cells=(r,S)=>`${_appsCellGeo(r)}<td class="num">${fmtB(r.finance)}</td>${_achBarCell(r._ach,S)}<td class="num">${fmtInt(r._nMkt)}</td><td class="num">${r._apm.toFixed(1)}</td><td class="num"><span class="pill ${pillCls(r.attach_rate)}">${fmtPct(r.attach_rate)}</span></td>`;
+    const _appsCellGeo=r=>r._lvl===0?_appsCell(r.apps,'all','region_name_en',r.key,r.key,'Region'):_appsCell(r.apps,'all','district_name_en',r.key,r.key,'District');
+    const out=[];
+    [...regionRows].sort((a,b)=>b.apps-a.apps).forEach(rg=>{
+      const kids=(_dByR[rg.key]||[]).sort((a,b)=>b.apps-a.apps);
+      const open=window._geoOpen.has(rg.key);
+      out.push(`<tr class="dm-row lv0" data-geokey="${_esc(rg.key)}"><td><span class="dm-car">${kids.length?(open?'▾':'▸'):''}</span><b>${_esc(rg.key)}</b> <small style="color:var(--muted)">${kids.length} District</small></td>${_cells({...rg,_lvl:0},_rgS)}</tr>`);
+      if(open) kids.forEach(ds=>out.push(`<tr class="dm-row lv1" data-noexp="1"><td>${_esc(ds.key)}</td>${_cells({...ds,_lvl:1},_dsS)}</tr>`));
+    });
+    const tb=document.getElementById('geoTreeBody');
+    if(tb) tb.innerHTML=out.length?out.join(''):'<tr><td colspan="7" class="empty">— ไม่มี Region —</td></tr>';
+    window._geoAllKeys=regionRows.map(r=>r.key);
+  };
+  window._drawGeo=_drawGeo; _drawGeo();
+  try{ _renderExtras(rows); }catch(err){ console.error('renderExtras', err); }
 
   smartTable({
     tableId:'brandTable', controlsHostId:'brandCtrl',
