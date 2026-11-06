@@ -972,7 +972,7 @@ thead th,.ins-tbl thead th,#prodTable th{
   background:var(--th-bg);color:var(--navy);
   border-bottom:2px solid var(--th-bd);
   border-right:1px solid rgba(26,58,107,.08);
-  font-weight:800;
+  font-weight:700;
 }
 thead th:last-child,.ins-tbl thead th:last-child,#prodTable th:last-child{border-right:none;}
 th.smart-sort:hover,#prodTable th.prod-sort:hover{background:#DCE7F5;}
@@ -991,29 +991,29 @@ tbody tr:hover,.ins-tbl tbody tr:hover td{background:var(--row-hover);}
 .card{border-radius:14px;border:1px solid #DDE4EE;box-shadow:var(--shadow-sm);}
 .pa-hdr,.aa-h{color:var(--navy);}
 .section-title{font-size:13.5px;color:var(--navy);}
-.section-title .bar{background:linear-gradient(180deg,var(--blue) 0%,var(--green) 100%);}
+.section-title .bar{background:var(--green);}
 .divider{background:#E1E7F0;}
-.takeaway-list li{background:#F5F9FF;font-size:13px;box-shadow:none;border:1px solid #E3EBF7;border-left-width:4px;}
+.takeaway-list li{background:#F5F9FF;font-size:13px;box-shadow:none;border:1px solid #E3EBF7;}
 .score-row{background:#FBFCFE;border-color:#E6ECF4;}
 .tab{color:#475569;}
 .tab.active{background:var(--navy);color:#fff;}
 
 /* ── KPI: พื้นขาว สีอยู่ที่ตัวเลข (ครบทุกแท็บ) ── */
-.kpi{background:#fff;color:var(--text);border:1px solid #DDE4EE;border-left:4px solid var(--navy);box-shadow:var(--shadow-sm);}
+.kpi{background:#fff;color:var(--text);border:1px solid #DDE4EE;box-shadow:var(--shadow-sm);}
 .kpi .lbl,.kpi .sub{color:var(--muted);opacity:1;}
 .kpi .lbl{font-size:10.5px;}
 .kpi .sub{font-size:10.5px;}
 .kpi .val{color:var(--navy);}
 .kpi.navy,.kpi.blue,.kpi.gold,.kpi.green,.kpi.purple,.kpi.red{background:#fff;}
-.kpi.blue{border-left-color:var(--blue);}.kpi.blue .val{color:var(--blue);}
-.kpi.gold{border-left-color:#D9A21B;}.kpi.gold .val{color:#7A5A12;}
-.kpi.green{border-left-color:var(--green);}.kpi.green .val{color:#0F5132;}
-.kpi.purple{border-left-color:#8146B5;}.kpi.purple .val{color:#5B2C82;}
-.kpi.red{border-left-color:var(--red);}.kpi.red .val{color:#9F1239;}
-#kpis .kpi,#insKpis .kpi{border:1px solid #DDE4EE;border-left:4px solid var(--navy);box-shadow:var(--shadow-sm);}
-#kpis .kpi.green,#insKpis .kpi.green{border-left-color:var(--green);}
-#kpis .kpi.red,#insKpis .kpi.red{border-left-color:var(--red);}
-#kpis .kpi.gold,#insKpis .kpi.gold{border-left-color:#D9A21B;}
+.kpi.blue{}.kpi.blue .val{color:var(--blue);}
+.kpi.gold{}.kpi.gold .val{color:#7A5A12;}
+.kpi.green{}.kpi.green .val{color:#0F5132;}
+.kpi.purple{}.kpi.purple .val{color:#5B2C82;}
+.kpi.red{}.kpi.red .val{color:#9F1239;}
+#kpis .kpi,#insKpis .kpi{border:1px solid #DDE4EE;box-shadow:var(--shadow-sm);}
+#kpis .kpi.green,#insKpis .kpi.green{}
+#kpis .kpi.red,#insKpis .kpi.red{}
+#kpis .kpi.gold,#insKpis .kpi.gold{}
 #insKpis .kpi .lbl{font-size:10px;}#insKpis .kpi .sub{font-size:10px;}
 .cm-kpi,.aa-k,.vat-side{background:#fff;border-color:#DDE4EE;box-shadow:var(--shadow-sm);}
 .cm-kpi .l,.aa-k .l{font-size:11.5px;}
@@ -1033,6 +1033,8 @@ tbody tr:hover,.ins-tbl tbody tr:hover td{background:var(--row-hover);}
 }
 /* โฟกัสด้วยคีย์บอร์ดให้เห็นชัด */
 button:focus-visible,select:focus-visible,input:focus-visible,.pnav-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
+.fbar-sec-label{font-weight:700;}
 </style>
 </head>
 <body>
