@@ -1047,6 +1047,28 @@ tbody tr:hover,.ins-tbl tbody tr:hover td{background:var(--row-hover);}
 .mix-det:not([open])>summary{margin-bottom:0;}
 .mix-hint{font-weight:500;font-size:11px;color:var(--muted);}
 .mix-det[open] .mix-hint{display:none;}
+/* แถบตัวกรองร้าน (แท็บ Dealer) */
+.dlr-fbar{margin-bottom:12px;}
+.dlr-fbar.active{border-color:#F59E0B;box-shadow:0 0 0 3px rgba(245,158,11,.15);}
+.dlr-fbar-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;gap:8px;align-items:center;}
+.dlr-pick{position:relative;min-width:0;}
+.dlr-pick input,#dlrPickShowroom{width:100%;height:36px;border:1px solid var(--border);border-radius:9px;padding:0 10px;font:inherit;font-size:13px;color:var(--navy);background:#fff;}
+#dlrPickShowroom.has-value{background:#fef9c3;}
+.dlr-pick input:focus,#dlrPickShowroom:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(44,111,191,.22);}
+.dlr-pick-panel{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:50;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 18px 40px rgba(16,24,40,.18);max-height:340px;overflow:auto;}
+.dlr-pick-panel[hidden]{display:none;}
+.dlr-pick-head{position:sticky;top:0;background:#F4F7FB;font-size:11.5px;font-weight:700;color:var(--navy);padding:8px 12px;border-bottom:1px solid var(--border);}
+.dlr-pick-item{display:flex;align-items:center;gap:10px;padding:9px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid #F1F5F9;}
+.dlr-pick-item:hover{background:#EEF4FC;}
+.dlr-pick-item.on{background:#fef9c3;font-weight:700;}
+.dlr-pick-item input{width:16px;height:16px;margin:0;accent-color:var(--navy);flex:0 0 auto;}
+.dlr-pick-empty{padding:16px;text-align:center;color:var(--muted);font-size:12.5px;}
+.dlr-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.dlr-chips:empty{display:none;}
+@media(max-width:600px){.dlr-fbar-row{grid-template-columns:1fr 1fr;}.dlr-pick{grid-column:1 / -1;}}
+/* ร้านที่หยุดส่งเคส: เว้นระยะสรุปกับช่องค้นหา (ฟอนต์ไทยบน Mac สูงกว่า) */
+#dormSum{margin-bottom:12px!important;line-height:1.7;}
+#dormCtrl .smart-controls,#dormCtrl{margin-top:0;}
 /* โฟกัสด้วยคีย์บอร์ดให้เห็นชัด */
 button:focus-visible,select:focus-visible,input:focus-visible,.pnav-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
 button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
@@ -1365,6 +1387,20 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
         📥 ส่งออก Excel รายสัญญา<span id="exportXlsDealerHint"></span>
       </button>
     </div>
+    <div class="card dlr-fbar" id="dlrFbar">
+      <div class="dlr-fbar-row">
+        <div class="dlr-pick" id="dlrPick">
+          <input id="dlrPickInput" type="search" autocomplete="off" spellcheck="false"
+                 placeholder="ค้นหาและติ๊กเลือก Dealer (เลือกได้หลายร้าน)…">
+          <div class="dlr-pick-panel" id="dlrPickPanel" hidden></div>
+        </div>
+        <select id="dlrPickShowroom" aria-label="Showroom"><option value="">ทุก Showroom</option></select>
+        <button type="button" class="dm-tg" id="dlrPickClear">✕ ล้างตัวกรองร้าน</button>
+      </div>
+      <div class="dlr-chips" id="dlrPickChips"></div>
+      <div class="cm-note" style="margin-top:6px">ใช้ร่วมกับตัวกรอง "สถานที่" ด้านบน (เลือกตรงไหนก็ได้ผลเหมือนกัน) · มีผลกับทุกแท็บ</div>
+    </div>
+
     <div class="stack dealer-stack">
       <div class="card">
         <div id="dealerCtrl"></div>
@@ -5017,6 +5053,62 @@ function _renderExtras(rows){
   });
 }
 
+/* ── แถบตัวกรองร้านในแท็บ Dealer (06/11/2026)
+   ไม่มีสถานะของตัวเอง: อ่าน/เขียน state.dealer และ state.showroom ผ่าน _toggleDealer / _setDealers / applyFilter
+   ชุดเดียวกับตัวกรอง "สถานที่" ด้านบน ── */
+function _dlrPickRenderList(){
+  const panel=document.getElementById('dlrPickPanel'), inp=document.getElementById('dlrPickInput');
+  if(!panel||panel.hidden) return;
+  const q=(inp.value||'').trim().toLowerCase();
+  const sel=new Set(dealerList());
+  const all=(_fDealerAll||[]);
+  const hit=q?all.filter(d=>d.toLowerCase().includes(q)):all;
+  const shown=[...hit.filter(d=>sel.has(d)),...hit.filter(d=>!sel.has(d))].slice(0,200);
+  panel.innerHTML=`<div class="dlr-pick-head">พบ ${fmtInt(hit.length)} ร้าน${hit.length>200?' · แสดง 200 ร้านแรก พิมพ์เพื่อค้นต่อ':''} · เลือกแล้ว ${sel.size}</div>`+
+    (shown.length?shown.map(d=>`<label class="dlr-pick-item${sel.has(d)?' on':''}"><input type="checkbox" data-dlr="${_esc(d)}"${sel.has(d)?' checked':''}><span>${_esc(d)}</span></label>`).join('')
+      :'<div class="dlr-pick-empty">ไม่พบร้านที่ค้นหา</div>');
+}
+function _dlrPickSync(){
+  const chips=document.getElementById('dlrPickChips');
+  if(chips){
+    const l=dealerList();
+    chips.innerHTML=l.map(d=>`<span class="fbar-chip" title="${_esc(d)}"><span>${_esc(_dlShort(d))}</span><button type="button" data-dlr-rm="${_esc(d)}" aria-label="เอาออก">✕</button></span>`).join('');
+  }
+  const sr=document.getElementById('dlrPickShowroom');
+  if(sr && typeof fShowroom!=='undefined'){
+    if(sr.dataset.src!==fShowroom.innerHTML){ sr.innerHTML=fShowroom.innerHTML; sr.dataset.src=fShowroom.innerHTML; }
+    sr.value=state.showroom||'';
+    sr.classList.toggle('has-value',!!state.showroom);
+  }
+  const fb=document.getElementById('dlrFbar');
+  if(fb) fb.classList.toggle('active',!!(state.dealer||state.showroom));
+  _dlrPickRenderList();
+}
+(function(){
+  const inp=document.getElementById('dlrPickInput'), panel=document.getElementById('dlrPickPanel');
+  if(!inp||!panel) return;
+  const open=()=>{ panel.hidden=false; _dlrPickRenderList(); };
+  inp.addEventListener('focus',open);
+  inp.addEventListener('click',open);
+  inp.addEventListener('input',()=>{ panel.hidden=false; _dlrPickRenderList(); });
+  inp.addEventListener('keydown',e=>{ if(e.key==='Escape'){ panel.hidden=true; inp.blur(); } });
+  panel.addEventListener('change',e=>{ const c=e.target.closest('[data-dlr]'); if(c) _toggleDealer(c.dataset.dlr); });
+  document.addEventListener('click',e=>{
+    const rm=e.target.closest&&e.target.closest('[data-dlr-rm]');
+    if(rm){ _toggleDealer(rm.dataset.dlrRm); return; }
+    if(!e.target.closest||!e.target.closest('#dlrPick')) panel.hidden=true;
+  });
+  document.getElementById('dlrPickShowroom')?.addEventListener('change',e=>{
+    fShowroom.value=e.target.value; applyFilter('showroom',e.target.value);
+  });
+  document.getElementById('dlrPickClear')?.addEventListener('click',()=>{
+    inp.value=''; panel.hidden=true;
+    const hadDealer=!!state.dealer;
+    fShowroom.value=''; state.showroom='';
+    if(hadDealer) _setDealers([]); else applyFilter('showroom','');
+  });
+})();
+
 function render(){
   const rows = getFiltered();
   try{ renderVat(rows); }catch(err){ console.error('renderVat', err); }
@@ -5431,6 +5523,7 @@ function render(){
   };
   window._drawGeo=_drawGeo; _drawGeo();
   try{ _renderExtras(rows); }catch(err){ console.error('renderExtras', err); }
+  try{ _dlrPickSync(); }catch(err){ console.error('dlrPickSync', err); }
 
   smartTable({
     tableId:'brandTable', controlsHostId:'brandCtrl',
