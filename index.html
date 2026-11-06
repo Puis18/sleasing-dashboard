@@ -902,6 +902,137 @@ footer{text-align:center;color:var(--muted);font-size:10px;padding:20px 14px 4px
 .dchip.green{background:#dcfce7;color:#166534;}
 .dchip.gold{background:#fef3c7;color:#92400e;}
 body.drill-open{overflow:hidden;}
+
+/* ════════════════════════════════════════════════════════════════
+   LIGHT THEME (ธีมสว่าง) — 06/11/2026
+   ปรับเฉพาะหน้าตา (สี/ฟอนต์/ระยะห่าง/การ์ด/ตาราง) ทับด้านบน
+   ไม่แตะโครงสร้าง HTML และไม่แตะ logic การคำนวณใน JS
+   ════════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#F4F7FB;--card:#FFFFFF;--text:#0F172A;--muted:#5B6B82;--border:#D5DCE6;
+  --th-bg:#E8EFF8;--th-bd:#C5D3E6;--zebra:#F8FAFD;--row-hover:#EEF4FC;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.05),0 2px 10px rgba(16,24,40,.05);
+}
+body{background:var(--bg);line-height:1.5;}
+
+/* ── Header: สว่าง ขอบล่างเขียวเป็นแอคเซนต์ ── */
+header{
+  background:#FFFFFF;color:var(--navy);
+  box-shadow:0 1px 0 var(--border),0 4px 14px rgba(16,24,40,.06);
+  border-bottom:3px solid var(--green);
+}
+.hdr-top h1{color:var(--navy);font-size:clamp(14px,3.8vw,18px);}
+.hdr-date{color:var(--muted);opacity:1;font-size:11.5px;}
+.hdr-brand{box-shadow:none;padding:2px 4px;border-radius:0;}
+.fbar-toggle{
+  background:#fff;color:var(--navy);border:1px solid var(--border);
+  font-size:12.5px;padding:6px 13px;box-shadow:var(--shadow-sm);
+}
+.fbar-toggle:hover{background:#F1F5FB;border-color:#B8C6DB;}
+.fbar-toggle.open{background:var(--navy);color:#fff;border-color:var(--navy);}
+.fbar-dot{background:#E11D48;border-color:#fff;}
+
+/* ── Filter bar: การ์ดสว่าง ── */
+.fbar{background:#F7F9FC;border:1px solid var(--border);border-radius:14px;}
+.fbar-section{background:#fff;border:1px solid #E3E9F1;}
+.fbar-section.fbar-section-foot{background:transparent;border:none;}
+.fbar-sec-label,.fbar-tg-label{color:var(--navy);opacity:1;}
+.fbar-sec-label{font-size:10.5px;}
+.fbar-tg-label{font-size:11.5px;}
+.fbar-scope{background:#EEF2F7;border:1px solid var(--border);}
+.fbar-scope button{color:#475569;font-size:11.5px;}
+.fbar-scope button:hover:not(.active){color:var(--navy);background:rgba(26,58,107,.06);}
+.fbar-scope button.active{background:var(--navy);color:#fff;box-shadow:0 1px 3px rgba(16,24,40,.2);}
+.fbar-controls select,.fbar-search-input,.fbar-mselect{
+  border:1px solid var(--border);box-shadow:none;
+}
+.fbar-controls select:hover,.fbar-mselect:hover{border-color:#9FB2CC;box-shadow:none;}
+.fbar-controls select:focus,.fbar-search-input:focus{
+  box-shadow:0 0 0 3px rgba(44,111,191,.22);border-color:var(--blue);
+}
+.fbar-reset{background:#fff;color:var(--navy);border:1px solid var(--border);}
+.fbar-reset:hover{background:#F1F5FB;}
+.fbar-chip.fbar-chip-clear{background:#fff;color:var(--navy);border-color:var(--border);}
+.fbar-chip.fbar-chip-clear:hover{background:#F1F5FB;}
+.fbar-divider{border-top-color:var(--border);}
+.fbar-status-bar{color:#334155;border-top:1px solid #E3E9F1;font-size:12px;}
+
+/* ── Bottom nav: สว่าง ── */
+.page-nav{
+  background:#FFFFFF;border-top:2px solid var(--green);
+  box-shadow:0 -2px 14px rgba(16,24,40,.08);
+}
+.pnav-btn{color:#64748B;font-size:9px;letter-spacing:0;line-height:1.15;text-align:center;}
+.pnav-btn:hover{color:var(--navy);background:#F4F7FB;}
+.pnav-btn.active{color:var(--navy);border-top-color:var(--green);background:#EAF4EE;}
+@media(min-width:900px){.pnav-btn{font-size:10.5px;}}
+
+/* ── ตาราง: หัวตารางสว่าง ตัวอักษรกรมท่า ── */
+thead th,.ins-tbl thead th,#prodTable th{
+  background:var(--th-bg);color:var(--navy);
+  border-bottom:2px solid var(--th-bd);
+  border-right:1px solid rgba(26,58,107,.08);
+  font-weight:800;
+}
+thead th:last-child,.ins-tbl thead th:last-child,#prodTable th:last-child{border-right:none;}
+th.smart-sort:hover,#prodTable th.prod-sort:hover{background:#DCE7F5;}
+th.smart-sort::after,#prodTable th.prod-sort::after{opacity:.5;}
+tbody td,.ins-tbl tbody td{border-bottom:1px solid #E6ECF4;}
+tbody tr:nth-child(even),.ins-tbl tbody tr:nth-child(even) td{background:var(--zebra);}
+tbody tr:hover,.ins-tbl tbody tr:hover td{background:var(--row-hover);}
+.ins-tbl tbody tr:nth-child(even){background:transparent;}
+.ins-tbl-wrap{border-color:var(--border);}
+@media(min-width:481px){
+  table{font-size:12.5px;}
+  tbody td{padding:8px 10px;}
+}
+
+/* ── การ์ด ── */
+.card{border-radius:14px;border:1px solid #DDE4EE;box-shadow:var(--shadow-sm);}
+.pa-hdr,.aa-h{color:var(--navy);}
+.section-title{font-size:13.5px;color:var(--navy);}
+.section-title .bar{background:linear-gradient(180deg,var(--blue) 0%,var(--green) 100%);}
+.divider{background:#E1E7F0;}
+.takeaway-list li{background:#F5F9FF;font-size:13px;box-shadow:none;border:1px solid #E3EBF7;border-left-width:4px;}
+.score-row{background:#FBFCFE;border-color:#E6ECF4;}
+.tab{color:#475569;}
+.tab.active{background:var(--navy);color:#fff;}
+
+/* ── KPI: พื้นขาว สีอยู่ที่ตัวเลข (ครบทุกแท็บ) ── */
+.kpi{background:#fff;color:var(--text);border:1px solid #DDE4EE;border-left:4px solid var(--navy);box-shadow:var(--shadow-sm);}
+.kpi .lbl,.kpi .sub{color:var(--muted);opacity:1;}
+.kpi .lbl{font-size:10.5px;}
+.kpi .sub{font-size:10.5px;}
+.kpi .val{color:var(--navy);}
+.kpi.navy,.kpi.blue,.kpi.gold,.kpi.green,.kpi.purple,.kpi.red{background:#fff;}
+.kpi.blue{border-left-color:var(--blue);}.kpi.blue .val{color:var(--blue);}
+.kpi.gold{border-left-color:#D9A21B;}.kpi.gold .val{color:#7A5A12;}
+.kpi.green{border-left-color:var(--green);}.kpi.green .val{color:#0F5132;}
+.kpi.purple{border-left-color:#8146B5;}.kpi.purple .val{color:#5B2C82;}
+.kpi.red{border-left-color:var(--red);}.kpi.red .val{color:#9F1239;}
+#kpis .kpi,#insKpis .kpi{border:1px solid #DDE4EE;border-left:4px solid var(--navy);box-shadow:var(--shadow-sm);}
+#kpis .kpi.green,#insKpis .kpi.green{border-left-color:var(--green);}
+#kpis .kpi.red,#insKpis .kpi.red{border-left-color:var(--red);}
+#kpis .kpi.gold,#insKpis .kpi.gold{border-left-color:#D9A21B;}
+#insKpis .kpi .lbl{font-size:10px;}#insKpis .kpi .sub{font-size:10px;}
+.cm-kpi,.aa-k,.vat-side{background:#fff;border-color:#DDE4EE;box-shadow:var(--shadow-sm);}
+.cm-kpi .l,.aa-k .l{font-size:11.5px;}
+.dm-row.lv0{background:#F3F7FC;}
+.dm-tg.active,.aa-seg button.on{box-shadow:0 1px 3px rgba(16,24,40,.12);}
+
+/* ── มือถือ: หัวหน้าไม่ตัดชื่อ "Dashboard Daily" ── */
+@media(max-width:520px){
+  .hdr-top{flex-wrap:wrap;row-gap:4px;}
+  .hdr-top h1{order:3;flex:1 1 100%;font-size:16px;white-space:normal;}
+  .hdr-brand{margin-right:0;}
+  .pnav-btn{font-size:8px;overflow-wrap:anywhere;padding:5px 0;}
+  .ins-summary-grid>*{min-width:0;}
+  #insKpis{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px;}
+  #insKpis .kpi{padding:8px 7px;}
+  #insKpis .kpi .val{font-size:14px;}
+}
+/* โฟกัสด้วยคีย์บอร์ดให้เห็นชัด */
+button:focus-visible,select:focus-visible,input:focus-visible,.pnav-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
 </style>
 </head>
 <body>
