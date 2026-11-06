@@ -1069,6 +1069,14 @@ tbody tr:hover,.ins-tbl tbody tr:hover td{background:var(--row-hover);}
 /* ร้านที่หยุดส่งเคส: เว้นระยะสรุปกับช่องค้นหา (ฟอนต์ไทยบน Mac สูงกว่า) */
 #dormSum{margin-bottom:12px!important;line-height:1.7;}
 #dormCtrl .smart-controls,#dormCtrl{margin-top:0;}
+/* Team Performance: แถบระดับ */
+.tm-lvl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:2px 0 10px;font-size:12px;}
+.tm-lvl:empty{display:none;}
+.tm-lvl-crumb{font-weight:700;color:var(--navy);}
+.tm-lvl-by{color:var(--muted);}
+.tm-lvl .dm-tg{margin-left:auto;}
+#teamTable td.tm-drill{cursor:pointer;}
+#teamTable td.tm-drill:hover b{color:var(--blue);text-decoration:underline;text-underline-offset:3px;}
 /* โฟกัสด้วยคีย์บอร์ดให้เห็นชัด */
 button:focus-visible,select:focus-visible,input:focus-visible,.pnav-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
 button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
@@ -1257,6 +1265,7 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
     <div class="stack">
       <div class="card">
         <div id="teamViewSw"></div>
+        <div id="teamLvl" class="tm-lvl"></div>
         <div id="teamCmKpis" class="cm-kpis" style="display:none"></div>
         <div id="teamCtrl"></div>
         <div class="table-wrap"><table class="table-resp">
@@ -5108,6 +5117,21 @@ function _dlrPickSync(){
   });
 })();
 
+/* Team Performance: คลิกชื่อแถวเพื่อเจาะลง / ปุ่มย้อนขึ้น 1 ระดับ (06/11/2026) — ใช้ applyFilter เดิม */
+document.addEventListener('click',e=>{
+  if(!e.target.closest) return;
+  if(e.target.closest('.apps-clickable')) return;
+  const d=e.target.closest('#teamTable [data-tdrill]');
+  if(d){
+    const i=d.dataset.tdrill.indexOf('|'), lvl=d.dataset.tdrill.slice(0,i), v=d.dataset.tdrill.slice(i+1);
+    if(!v||v==='—') return;
+    const sel={bu:fBU,am:fAM,hub:fHub,team:fTeam}[lvl]; if(sel) sel.value=v;
+    applyFilter(lvl,v); return;
+  }
+  const u=e.target.closest('#teamLvl [data-tlvl-up]');
+  if(u){ const k=u.dataset.tlvlUp; const sel={bu:fBU,am:fAM,hub:fHub,team:fTeam}[k]; if(sel) sel.value=''; applyFilter(k,''); }
+});
+
 function render(){
   const rows = getFiltered();
   try{ renderVat(rows); }catch(err){ console.error('renderVat', err); }
@@ -5413,12 +5437,73 @@ function render(){
   const _achNote=(S,id='teamViewNote')=>{const vn=document.getElementById(id); if(!vn) return;
     vn.style.display=''; vn.innerHTML=`<span class="ach-legend"><span class="ok">${_ICO_UP}ตามเป้า</span><span class="mid">${_ICO_MID}ใกล้เป้า</span><span class="low">${_ICO_DN}ต่ำกว่าเป้า</span></span> แถบเต็ม = ${S}% ของเป้าเดือน · เส้นสีดำคือจุดที่ควรถึง ณ วันที่ข้อมูลล่าสุด (${fmtPct(_achPace)})`;};
 
+  /* ── ตาราง Team Performance แปรตามตัวกรอง (06/11/2026)
+     ทั้งหมด → BU · BU → AM · AM (EA) → Hub RM · Hub RM / AM (MC) → Team · Team → CK/BK/AG
+     เป้าของกลุ่ม = ผลรวมเป้ารายทีมในกลุ่ม ด้วยสูตรเดียวกับตาราง Team (ผลรวมทุกกลุ่ม = เป้าใน KPI) ── */
+  const _tmLevel = !state.bu&&!state.am&&!state.hub&&!state.team ? 'bu'
+                 : state.team ? 'mk'
+                 : state.hub ? 'team'
+                 : state.am ? (RM_KEYS.has(state.am) ? 'hub' : 'team')
+                 : 'am';
+  const _teamTgtOf = ts => (window._TGT_NEW && state.maker==='dlr') ? window._dlrT(ts)
+    : (window._TGT_NEW && state.maker!=='emp') ? (window._TEAM_T||500)
+    : (window._TGT_NEW?30:20)*Math.max((_teamMktMap[ts]?.size)||1,1);
+  const _LVL_NAME={bu:'BU',am:'AM',hub:'Hub RM',team:'Team',mk:'CK/BK/AG'};
+  const _drawTeamLevelBar=()=>{
+    const el=document.getElementById('teamLvl'); if(!el) return;
+    const crumb=['ทั้งหมด'];
+    if(state.bu) crumb.push(state.bu);
+    if(state.am) crumb.push(AM_LABEL[state.am]||state.am);
+    if(state.hub) crumb.push(state.hub+(HUB_INFO[state.hub]?' · '+HUB_INFO[state.hub].nick:''));
+    if(state.team) crumb.push((team.find(t=>t.name===state.team)||{}).key||state.team);
+    const up=state.team?'team':state.hub?'hub':state.am?'am':state.bu?'bu':'';
+    el.innerHTML=`<span class="tm-lvl-crumb">${crumb.map(_esc).join(' › ')}</span>`+
+      `<span class="tm-lvl-by">แสดงราย <b>${_LVL_NAME[_tmLevel]}</b>${_tmLevel!=='mk'?' · คลิกชื่อเพื่อเจาะลง':''}</span>`+
+      (up?`<button type="button" class="dm-tg" data-tlvl-up="${up}">⬆ ย้อนขึ้น 1 ระดับ</button>`:'');
+  };
+  const _drawTeamGroups=lvl=>{
+    const keyOf = lvl==='bu' ? (r=>isRMTeam(r.team_short||'')?'EA':'MC')
+                : lvl==='am' ? (r=>{const ts=r.team_short||''; return isRMTeam(ts)?(amOf(ts)||'—'):(r.region_manager_fullname||'—');})
+                : (r=>hubOf(r.team_short||'')||'—');
+    const label = k => lvl==='am' ? (AM_LABEL[k]||k) : k;
+    const sub = (k,nTeam) => (lvl==='hub'&&HUB_INFO[k] ? HUB_INFO[k].rm+' ('+HUB_INFO[k].nick+') · ' : lvl==='bu' ? (k==='EA'?'ทีม EA · ':'ทีม MC · ') : '')+nTeam+' ทีม';
+    const grp = groupBy(rows, keyOf, (k,rs)=>{
+      const a=agg(rs);
+      const tms=[...new Set(rs.map(r=>r.team_short).filter(ts=>/^TEAM/.test(ts||'')))];
+      const tgt=tms.reduce((x,ts)=>x+_teamTgtOf(ts),0);
+      const nM=new Set(rs.filter(r=>!r.is_leader_as_mkt && r.maker!=='dlr' && r.marketing_fullname && r.marketing_fullname!=='—').map(r=>r.marketing_fullname)).size;
+      return {...a,key:k,_label:label(k),_sub:sub(k,tms.length),_tgt:tgt,_ach:tgt?a.apps/tgt*100:0,_nMkt:nM,_apm:nM?a.apps/nM:0};
+    });
+    const th=document.getElementById('teamTableHead');
+    if(th) th.innerHTML=`<tr><th>${_LVL_NAME[lvl]}</th><th class="num">Apps</th><th class="num">Finance ฿</th><th class="num">% ACHIEVE TARGET</th><th class="num">คน</th><th class="num">Productivity</th><th class="num">%Mobile Care</th></tr>`;
+    const S=_achScale(grp.map(g=>g._ach));
+    smartTable({
+      tableId:'teamTable', controlsHostId:'teamCtrl',
+      rows: grp, searchFields:['_label','key','_sub'], searchPlaceholder:'ค้น '+_LVL_NAME[lvl]+'…',
+      defaultSort:{key:'apps',dir:'desc'}, emptyText:'— ไม่มีข้อมูล —',
+      maxRows:15, scoreboardHostId:'teamTableScore',
+      columns:[
+        {key:'key', sortKey:r=>r._label, render:g=>`<td class="tm-name tm-drill" data-tdrill="${lvl}|${_esc(g.key)}"><b>${_esc(g._label)}</b><small>${_esc(g._sub)} · เป้า ${fmtInt(g._tgt)} เคส</small></td>`},
+        {key:'apps', sortKey:r=>r.apps, numeric:true, render:g=>`<td class="num">${fmtInt(g.apps)}</td>`},
+        {key:'finance', sortKey:r=>r.finance, numeric:true, render:g=>`<td class="num">${fmtB(g.finance)}</td>`},
+        {key:'ach', sortKey:r=>r._ach, numeric:true, render:g=>_achBarCell(g._ach,S)},
+        {key:'nMkt', sortKey:r=>r._nMkt, numeric:true, render:g=>`<td class="num">${fmtInt(g._nMkt)}</td>`},
+        {key:'apm', sortKey:r=>r._apm, numeric:true, render:g=>`<td class="num">${g._apm.toFixed(1)}</td>`},
+        {key:'attach', sortKey:r=>r.attach_rate, numeric:true, render:g=>`<td class="num"><span class="pill ${pillCls(g.attach_rate)}">${fmtPct(g.attach_rate)}</span></td>`}
+      ]
+    });
+    _achNote(S);
+  };
+
   const _drawTeamTable=()=>{
   _teamViewSwitch();
   const _cmk=document.getElementById('teamCmKpis'); if(_cmk) _cmk.style.display=(_teamView==='cm')?'':'none';
+  { const _tl=document.getElementById('teamLvl'); if(_tl) _tl.style.display=(_teamView==='normal')?'':'none'; }
   if(_teamView==='aa'){ _drawAaTable(rows, teamFiltered); return; }
   if(_teamView==='cm'){ _drawCmTable(rows, teamFiltered); return; }
   const _vn=document.getElementById('teamViewNote'); if(_vn) _vn.style.display='none';
+  _drawTeamLevelBar();
+  if(_tmLevel==='bu'||_tmLevel==='am'||_tmLevel==='hub'){ _drawTeamGroups(_tmLevel); return; }
   if(teamFiltered && mktSrc.length){
     const th=document.getElementById('teamTableHead');
     if(th) th.innerHTML='<tr><th>CK/BK/AG</th><th class="num">Apps</th><th class="num">Finance ฿</th><th class="num">% ACHIEVE TARGET</th><th class="num">฿/เคส</th><th class="num">%Mobile Care</th></tr>';
@@ -5453,7 +5538,7 @@ function render(){
       defaultSort:{key:'apps',dir:'desc'}, emptyText:'— ไม่มีทีม —',
       maxRows:15, scoreboardHostId:'teamTableScore',
       columns:[
-        {key:'key',     sortKey:r=>r._leader||r.key, render:t=>{const ar=(t.name||'').split(':').slice(1).join(':').trim();return`<td class="tm-name"><b>${_esc(t._leader||t.key)}</b><small>${_esc(t.key)}${ar?' · '+_esc(ar):''}</small></td>`;}},
+        {key:'key',     sortKey:r=>r._leader||r.key, render:t=>{const ar=(t.name||'').split(':').slice(1).join(':').trim();return`<td class="tm-name tm-drill" data-tdrill="team|${_esc(t.name||t.key)}"><b>${_esc(t._leader||t.key)}</b><small>${_esc(t.key)}${ar?' · '+_esc(ar):''}</small></td>`;}},
         {key:'apps',    sortKey:r=>r.apps,    numeric:true, render:t=>_appsCell(t.apps,'all','team_short',t.key,t._leader||t.key,'Team · '+t.key)},
         {key:'finance', sortKey:r=>r.finance, numeric:true, render:t=>`<td class="num">${fmtB(t.finance)}</td>`},
         {key:'ach',     sortKey:r=>r._ach,    numeric:true, render:t=>_achBarCell(t._ach,_tmS)},
