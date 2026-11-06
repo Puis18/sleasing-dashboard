@@ -1036,9 +1036,6 @@ tbody tr:hover,.ins-tbl tbody tr:hover td{background:var(--row-hover);}
 /* ── 06/11/2026: Portfolio — ถ้ามีไม่เกิน 2 แถว ซ่อนกราฟ ให้ตารางเต็มการ์ด ── */
 .pa-card:not(:has(.pa-table tbody tr:nth-child(3))) .pa-chart-side{display:none;}
 .pa-card:not(:has(.pa-table tbody tr:nth-child(3))) .pa-body{grid-template-columns:1fr;}
-/* ระยะผ่อน: ตาราง 5 คอลัมน์ → กราฟอยู่ใต้ตาราง */
-#anaTermPane .pa-body{grid-template-columns:1fr;}
-#anaTermPane .pa-chart-side .chart-wrap{height:200px;}
 /* ร้านผสม: พับเก็บ */
 .mix-det>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .mix-det>summary::-webkit-details-marker{display:none;}
@@ -1077,6 +1074,47 @@ tbody tr:hover,.ins-tbl tbody tr:hover td{background:var(--row-hover);}
 .tm-lvl .dm-tg{margin-left:auto;}
 #teamTable td.tm-drill{cursor:pointer;}
 #teamTable td.tm-drill:hover b{color:var(--blue);text-decoration:underline;text-underline-offset:3px;}
+/* ═══ จัดเลย์เอาต์ 06/11/2026 ═══ */
+:root{--tbl-max:440px;}
+.table-wrap,.ins-tbl-wrap,.ins-tbl-wrap-lg{max-height:var(--tbl-max);}
+/* Insurance: การ์ดคู่สูงเท่ากัน ตารางเลื่อนในกล่องเดียว */
+.ins-pair{align-items:stretch;margin-top:4px;}
+.ins-pair>div{display:flex;flex-direction:column;min-width:0;}
+.ins-pair>div>.card{flex:1;display:flex;flex-direction:column;padding:10px 12px;}
+.ins-pair #insDynTableWrap{flex:1;display:flex;flex-direction:column;min-height:0;}
+.ins-pair .ins-tbl-wrap{flex:1 1 auto;min-height:0;}
+.ins-sub{font-weight:500;font-size:11.5px;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:6px;}
+.ins-tbl tbody tr.ins-sep td{background:#EEF3FA!important;color:var(--navy);font-weight:700;font-size:11.5px;padding:6px 10px;border-top:1px solid var(--th-bd);border-bottom:1px solid var(--th-bd);}
+/* Portfolio: การ์ดจับคู่ สูงเท่ากันในแถว · การ์ดกว้างเต็มแถว · กราฟโดนัทใหญ่ขึ้น */
+.portfolio-grid{align-items:stretch;}
+.pa-card.pa-wide{grid-column:1 / -1;}
+.pa-chart-side .chart-wrap{height:clamp(200px,26vh,260px);}
+@media(min-width:900px){.pa-body{grid-template-columns:minmax(0,3fr) minmax(0,2fr);}}
+/* มือถือ (≤520px): ไม่ให้ตารางเลื่อนซ้ายขวา + ตัวอักษรไม่เล็กกว่า 11px */
+@media(max-width:520px){
+  .mh{display:none!important;}
+  table{font-size:11.5px;}
+  thead th,td.num,th.num,.table-mk th,.table-mk td,#prodTable th,#prodTable td{font-size:11px;}
+  .pill,.score-mc,.score-achieve,.dchip,.cm-pill,.vat-pill,.hm-pill,.dm-pill,.aa-flag{font-size:11px;}
+  .kpi .lbl,.kpi .sub,#insKpis .kpi .lbl,#insKpis .kpi .sub,.cm-kpi .l,.cm-sub,.cm-note,.vat-kpi .l,.vat-kpi .s,.aa-k .l,.aa-k .w,.aa-sub,.hm-sub,.smart-controls .smart-count,.smart-controls label,footer{font-size:11px;}
+  small,#teamTable td.tm-name small,.table-mk small,#lagTable td.tm-name small{font-size:11px;}
+  .table-wrap,.ins-tbl-wrap,.ins-tbl-wrap-lg{max-height:400px;}
+  .ins-pair .ins-tbl-wrap{max-height:380px;}
+  #teamTable td.achc,#geoTreeBody td.achc{min-width:100px;}
+  .ach-bar{min-width:36px;}
+  .ach-wrap{gap:6px;}
+  thead th{white-space:normal;line-height:1.25;}
+  thead th,tbody td,.ins-tbl thead th,.ins-tbl tbody td{padding-left:5px;padding-right:5px;}
+  td.num,th.num{padding-left:4px;padding-right:4px;}
+  #p8 table td:first-child,#p7 table td:first-child{white-space:normal;word-break:break-word;}
+  .ach-val{min-width:44px;gap:2px;}
+  .table-resp thead th.num,thead th.num{white-space:normal;}
+  .pill{padding:2px 5px;}
+  .table-mk{table-layout:auto;}
+  .table-mk th:first-child,.table-mk td:first-child{width:auto;}
+  .table-mk th.num,.table-mk td.num{width:auto;}
+  .table-mk th,.table-mk td{padding-left:3px;padding-right:3px;}
+}
 /* โฟกัสด้วยคีย์บอร์ดให้เห็นชัด */
 button:focus-visible,select:focus-visible,input:focus-visible,.pnav-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
 button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
@@ -1482,6 +1520,7 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
     <div class="section-title"><span class="bar"></span>🔍 Portfolio Analysis</div>
     <div class="portfolio-grid">
 
+      <!-- จัดคู่การ์ดตามจำนวนแถว (06/11/2026): เล็ก+เล็ก · กลาง+กลาง · ใหญ่+ใหญ่ · กว้างเต็มแถว -->
       <!-- Interest Rate -->
       <div class="card pa-card" id="anaIRPane">
         <div class="pa-hdr">📊 Interest Rate</div>
@@ -1498,6 +1537,26 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
           </div>
           <div class="pa-chart-side">
             <div class="chart-wrap"><canvas id="irChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Approval -->
+      <div class="card pa-card" id="anaApvPane">
+        <div class="pa-hdr">✅ Approval Type</div>
+        <div class="pa-body">
+          <div class="pa-tbl-side">
+            <div id="approveCtrl"></div>
+            <div class="table-wrap pa-table"><table>
+              <thead><tr>
+                <th>ประเภทอนุมัติ</th><th class="num">Apps</th><th class="num">%Share</th>
+                <th class="num">Finance ฿</th>
+              </tr></thead>
+              <tbody id="approveTable"></tbody>
+            </table></div>
+          </div>
+          <div class="pa-chart-side">
+            <div class="chart-wrap"><canvas id="approveChart"></canvas></div>
           </div>
         </div>
       </div>
@@ -1542,26 +1601,6 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
         </div>
       </div>
 
-      <!-- Approval -->
-      <div class="card pa-card" id="anaApvPane">
-        <div class="pa-hdr">✅ Approval Type</div>
-        <div class="pa-body">
-          <div class="pa-tbl-side">
-            <div id="approveCtrl"></div>
-            <div class="table-wrap pa-table"><table>
-              <thead><tr>
-                <th>ประเภทอนุมัติ</th><th class="num">Apps</th><th class="num">%Share</th>
-                <th class="num">Finance ฿</th>
-              </tr></thead>
-              <tbody id="approveTable"></tbody>
-            </table></div>
-          </div>
-          <div class="pa-chart-side">
-            <div class="chart-wrap"><canvas id="approveChart"></canvas></div>
-          </div>
-        </div>
-      </div>
-
       <!-- Occupation -->
       <div class="card pa-card" id="anaOccPane">
         <div class="pa-hdr">💼 Occupation</div>
@@ -1591,7 +1630,7 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
             <div class="table-wrap pa-table"><table>
               <thead><tr>
                 <th>ระยะผ่อน</th><th class="num">Apps</th><th class="num">%Share</th>
-                <th class="num">Finance ฿</th><th class="num">ค่างวดเฉลี่ย</th>
+                <th class="num">Finance ฿</th>
               </tr></thead>
               <tbody id="termTable"></tbody>
             </table></div>
@@ -1603,7 +1642,7 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
       </div>
 
       <!-- แคมเปญ / แพ็กเกจเงินดาวน์ (เพิ่ม 06/11/2026) -->
-      <div class="card pa-card" id="anaCampPane">
+      <div class="card pa-card pa-wide" id="anaCampPane">
         <div class="pa-hdr">🏷️ แคมเปญ / แพ็กเกจเงินดาวน์</div>
         <div class="pa-tbl-side">
           <div id="campCtrl"></div>
@@ -1700,20 +1739,20 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
 
     <div class="divider"></div>
 
-    <!-- KPI + Dynamic table side by side -->
-    <div class="ins-summary-grid">
+    <!-- แบบ A (06/11/2026): KPI เต็มความกว้าง แล้วตาราง 2 ใบสูงเท่ากัน -->
+    <div class="section-title" style="margin-top:0"><span class="bar"></span>🎯 %Mobile Care — ภาพรวม</div>
+    <div class="kpis" id="insKpis" style="grid-template-columns:repeat(3,1fr)"></div>
+
+    <div class="ins-summary-grid ins-pair">
       <div>
-        <div class="section-title" style="margin-top:0"><span class="bar"></span>🎯 %Mobile Care — ภาพรวม</div>
-        <div class="kpis" id="insKpis" style="grid-template-columns:repeat(3,1fr)"></div>
-        <div class="section-title" style="margin-top:12px" id="insDynTitle"><span class="bar"></span>👥 ทีมที่ต้องติดตาม</div>
-        <div class="card" style="padding:10px 12px;">
+        <div class="section-title" id="insDynTitle"><span class="bar"></span>👥 ทีมที่ต้องติดตาม</div>
+        <div class="card">
           <div id="insDynTableWrap"></div>
-          <div id="teamRiskScore" style="display:none;margin-top:10px;border-top:1px dashed var(--border);padding-top:8px;"></div>
         </div>
       </div>
       <div>
-        <div class="section-title" style="margin-top:0" id="insBelowTitle"><span class="bar"></span>🔴 Marketing ที่ %Mobile Care &lt; 60%</div>
-        <div class="card" style="padding:10px 12px;">
+        <div class="section-title" id="insBelowTitle"><span class="bar"></span>🔴 Marketing ที่ %Mobile Care &lt; 60%</div>
+        <div class="card">
           <div class="ins-tbl-wrap ins-tbl-wrap-lg">
             <table class="ins-tbl" style="width:100%">
               <thead><tr>
@@ -4969,11 +5008,10 @@ function _renderExtras(rows){
     tableId:'termTable', controlsHostId:'termCtrl', rows:term, searchFields:['key'], searchPlaceholder:'ค้นจำนวนงวด…',
     defaultSort:{key:'n',dir:'asc'}, emptyText:'— ไม่มีข้อมูล —', maxRows:12,
     columns:[
-      {key:'n', sortKey:r=>r.n, numeric:true, render:t=>`<td>${t.n} งวด</td>`},
+      {key:'n', sortKey:r=>r.n, numeric:true, render:t=>`<td>${t.n} งวด<br><small style="color:var(--muted)">ค่างวดเฉลี่ย ${fmtB(t.inst)}</small></td>`},
       {key:'apps', sortKey:r=>r.apps, numeric:true, render:t=>`<td class="num">${fmtInt(t.apps)}</td>`},
       {key:'share', sortKey:r=>r.apps, numeric:true, render:t=>`<td class="num">${share(t.apps)}</td>`},
-      {key:'finance', sortKey:r=>r.finance, numeric:true, render:t=>`<td class="num">${fmtB(t.finance)}</td>`},
-      {key:'inst', sortKey:r=>r.inst, numeric:true, render:t=>`<td class="num">${fmtB(t.inst)}</td>`}
+      {key:'finance', sortKey:r=>r.finance, numeric:true, render:t=>`<td class="num">${fmtB(t.finance)}</td>`}
     ]
   });
   dc('termChart');
@@ -5142,6 +5180,45 @@ document.addEventListener('click',e=>{
   const u=e.target.closest('#teamLvl [data-tlvl-up]');
   if(u){ const k=u.dataset.tlvlUp; const sel={bu:fBU,am:fAM,hub:fHub,team:fTeam}[k]; if(sel) sel.value=''; applyFilter(k,''); }
 });
+
+/* ── มือถือ: ซ่อนคอลัมน์รองเพื่อไม่ให้ตารางเลื่อนซ้ายขวา (06/11/2026)
+   ใส่คลาส .mh ที่ th และ td ของคอลัมน์ที่ชื่อหัวอยู่ในรายการ · ซ่อนจริงด้วย CSS ที่ ≤520px เท่านั้น (จอคอมไม่กระทบ)
+   ทำซ้ำได้เสมอ (idempotent) เรียกอัตโนมัติเมื่อมีการวาดตารางใหม่ ── */
+const _MH_HDR=new Set(['คน','Productivity','ภายในวันเดียว','฿/เคส','Ins Apps','Ins','Δ เฉลี่ย','ร้าน','ร้าน Sub','ร้าน VAT','ร้าน No VAT','ยอดจัด No VAT','ทีมที่ดูแลร้าน (ประสานงาน)','เคสล่าสุด','เฉลี่ย/เดือน','เงียบมาแล้ว','ป้ายที่ใช้','% ข้างน้อย','Finance']);
+function _mobileCols(){
+  if(window.innerWidth>520) return;
+  const pg=document.querySelector('.page.active'); if(!pg) return;
+  pg.querySelectorAll('table').forEach(t=>{
+    const ths=[...t.querySelectorAll('thead th')]; if(!ths.length) return;
+    const idx=[];
+    ths.forEach((th,i)=>{ const x=th.textContent.replace(/[⇅▲▼]/g,'').replace(/\s+/g,' ').trim(); if(_MH_HDR.has(x)) idx.push(i); });
+    /* Finance เป็นคอลัมน์สำคัญ ยกเว้นตาราง Hub Master ที่มีคอลัมน์เยอะ */
+    const hub=t.closest('#p8');
+    const keep=new Set(); ths.forEach((th,i)=>{ if(th.textContent.replace(/[⇅▲▼]/g,'').trim()==='Finance' && !hub) keep.add(i); });
+    /* ตารางที่มีแถบ % ACHIEVE: ซ่อน Finance ด้วย (แถบ + ตัวเลขกินที่มาก) — ดู Finance ได้ที่แท็บ Over All */
+    if(ths.some(th=>/ACHIEVE/.test(th.textContent))) ths.forEach((th,i)=>{ if(th.textContent.replace(/[⇅▲▼]/g,'').trim()==='Finance ฿'){ idx.push(i); } });
+    /* ตารางกว้าง (≥6 คอลัมน์): ซ่อน %Share · ตารางทีมใน Insurance: ซ่อน MO Apps · แคมเปญ: ซ่อนดาวน์เฉลี่ย */
+    ths.forEach((th,i)=>{ const x=th.textContent.replace(/[⇅▲▼]/g,'').trim();
+      if(x==='%Share' && ths.length>=6) idx.push(i);
+      if(x==='MO Apps' && t.closest('#insDynTableWrap')) idx.push(i);
+      if(x==='ดาวน์เฉลี่ย') idx.push(i); });
+    const hide=idx.filter(i=>!keep.has(i));
+    if(!hide.length) return;
+    const n=ths.length;
+    hide.forEach(i=>ths[i].classList.add('mh'));
+    t.querySelectorAll('tbody tr').forEach(tr=>{
+      if(tr.cells.length!==n) return;
+      hide.forEach(i=>tr.cells[i].classList.add('mh'));
+    });
+  });
+}
+(function(){
+  let q=0;
+  const run=()=>{ q=0; try{ _mobileCols(); }catch(e){ console.error('mobileCols',e); } };
+  new MutationObserver(()=>{ if(!q) q=requestAnimationFrame(run); }).observe(document.body,{childList:true,subtree:true});
+  window.addEventListener('resize',()=>{ if(!q) q=requestAnimationFrame(run); });
+  document.addEventListener('click',()=>{ if(!q) q=requestAnimationFrame(run); });
+})();
 
 function render(){
   const rows = getFiltered();
@@ -5940,11 +6017,13 @@ function render(){
         const pIns=t.apps_with_ins+(t.attach_rate/100*apd*daysRemaining);
         const pAttach=pTotal>0?pIns/pTotal*100:0;
         return{...t,projAttach:pAttach};
-      }).sort((a,b)=>a.attach_rate-b.attach_rate);
-      const _TOP_RISK=15;
-      const _topRisk=teamRisk.slice(0,_TOP_RISK);
-      const _restRisk=teamRisk.slice(_TOP_RISK);
-      const teamBody=_topRisk.length?_topRisk.map(t=>{
+      });
+      /* ต้องติดตาม (ต่ำกว่า 60% → เสี่ยง) ก่อน แล้วค่อยทีมปลอดภัย · ตารางเดียวเลื่อนในกล่องเดียว */
+      const _rk=t=>t.attach_rate<60?0:t.projAttach<60?1:2;
+      teamRisk.sort((a,b)=>_rk(a)-_rk(b)||a.attach_rate-b.attach_rate);
+      const _nWatch=teamRisk.filter(t=>_rk(t)<2).length, _nSafe=teamRisk.length-_nWatch;
+      if(dynTitleEl) dynTitleEl.innerHTML=`<span class="bar"></span>👥 ทีมที่ต้องติดตาม <span class="ins-sub">${fmtInt(_nWatch)} ทีมต้องติดตาม · ${fmtInt(_nSafe)} ทีมปลอดภัย</span>`;
+      const _tRow=t=>{
         const status=t.attach_rate<60?`<span class="pill red">ต่ำกว่าเป้า</span>`
           :t.projAttach<60?`<span class="pill gold">เสี่ยง</span>`
           :`<span class="pill green">ปลอดภัย</span>`;
@@ -5955,7 +6034,12 @@ function render(){
           <td class="num"><span class="pill ${pillCls(t.attach_rate)}">${fmtPct(t.attach_rate)}</span></td>
           <td class="num">${status}</td>
         </tr>`;
-      }).join(''):E;
+      };
+      const _sep=txt=>`<tr class="ins-sep"><td colspan="5">${txt}</td></tr>`;
+      const teamBody=teamRisk.length
+        ? (_nWatch?'':_sep('✅ ไม่มีทีมที่ต้องติดตาม'))
+          + teamRisk.map((t,i)=>(i===_nWatch&&_nWatch>0&&_nSafe>0?_sep(`ทีมที่ปลอดภัย (${fmtInt(_nSafe)} ทีม)`):'')+_tRow(t)).join('')
+        : E;
       if(dynWrap) dynWrap.innerHTML=`<div class="ins-tbl-wrap ins-tbl-wrap-lg"><table class="ins-tbl" style="width:100%">
         <thead><tr>
           <th style="text-align:left;width:44%">ทีม</th>
@@ -5966,16 +6050,6 @@ function render(){
         </tr></thead>
         <tbody>${teamBody}</tbody>
       </table></div>`;
-      const _teamRiskScoreEl=document.getElementById('teamRiskScore');
-      if(_teamRiskScoreEl){
-        if(_restRisk.length){
-          _teamRiskScoreEl.style.display='block';
-          const _maxAppsRisk=teamRisk.length?Math.max(...teamRisk.map(t=>t.apps||1)):1;
-          _renderScoreboard(_teamRiskScoreEl,_restRisk,`อันดับที่ ${_TOP_RISK+1}+`,_maxAppsRisk,_TOP_RISK);
-        } else {
-          _teamRiskScoreEl.style.display='none';
-        }
-      }
     }
     // 📊 %Mobile Care chart REMOVED ทั้งหมด — เหลือเฉพาะตาราง "ทีมที่ต้องติดตาม" และ "Marketing ที่ <60%"
     {
