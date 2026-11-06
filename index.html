@@ -4795,6 +4795,11 @@ function _kpiCompare(rows, k, mo, targetApps){
   const pace=Math.min(100, d/new Date(y,m,0).getDate()*100);
   const need=Math.round(targetApps*pace/100);
   if(cards[4]){
+    /* สีของตัวเลข % Achieve Target: ตัดสินตามจังหวะ ณ วันนี้ (เกณฑ์เดียวกับตารางทีม)
+       ≥ จังหวะ = เขียว · ≥ 80% ของจังหวะ = เหลือง · ต่ำกว่านั้น = แดง
+       (ดูหลายเดือน → จังหวะ = 100% → เท่ากับเกณฑ์เดิม ≥100 / ≥80) */
+    const ach=targetApps?k.apps/targetApps*100:0;
+    cards[4].className='kpi '+(ach>=pace?'green':ach>=pace*0.8?'gold':'red');
     const ok=k.apps>=need;
     const el=document.createElement('div'); el.className='kpi-pace '+(ok?'up':'down');
     el.innerHTML=`ควรได้ ณ วันที่ ${d}: <b>${fmtPct(pace)}</b> (${fmtInt(need)} เคส) · ${ok?'ทันจังหวะ':'ขาดอีก '+fmtInt(need-k.apps)+' เคส'}`;
