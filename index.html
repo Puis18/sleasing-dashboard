@@ -1802,10 +1802,10 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
     <div class="card" style="margin-top:12px">
       <div id="hmCtrl" class="dm-ctrl">
         <span class="dm-ctrl-lb">ช่วงเวลา:</span>
-        <button class="dm-tg active" data-per="mtd">เดือนล่าสุด</button>
+        <button class="dm-tg" data-per="mtd">เดือนล่าสุด</button>
         <button class="dm-tg" data-per="d30">30 วันล่าสุด</button>
         <button class="dm-tg" data-per="d7">7 วันล่าสุด</button>
-        <button class="dm-tg" data-per="flt">ตามตัวกรอง</button>
+        <button class="dm-tg active" data-per="flt">ตามตัวกรอง</button>
       </div>
       <div class="dm-ctrl">
         <span class="dm-ctrl-lb">ร้าน Sub:</span>
@@ -4420,7 +4420,7 @@ const HM = DATA.hub_master || null;
 const _HM_HUB = {};
 (HM ? HM.hubs : []).forEach(h=>{ _HM_HUB[h.code]=h; });
 const _HM_SHOPS = HM ? HM.shops : [];
-let _hmPer  = 'mtd';                 /* mtd | d30 | d7 | flt */
+let _hmPer  = 'flt';                 /* flt (ตามตัวกรอง · ค่าเริ่มต้น) | mtd | d30 | d7 */
 let _hmShow = 'all';                 /* all | case | none */
 let _hmUserOnly = true;              /* แสดงเฉพาะร้านที่มี User (ค่าเริ่มต้น) */
 let _hmExpanded = new Set();
@@ -4458,6 +4458,17 @@ function _hmHubPass(code){
   if(state.am){ const i=HUB_INFO[u]; if(!i || i.am!==state.am) return false; }
   return true;
 }
+/* ตัวกรองอื่น ๆ นอกจาก AM / Hub RM (06/11/2026): ขอบเขต · ผู้ทำเคส · ประเภทร้าน · BU · ทีม · CK/BK/AG · Dealer · Showroom
+   ใช้เงื่อนไขเดียวกับ getFiltered() — AM / Hub RM ไม่ใช้ตรงนี้ เพราะหน้านี้ใช้กำหนด "เจ้าของ Hub" (_hmHubPass) */
+function _hmOtherPass(r){
+  if(!scopePass(r) || !makerPass(r)) return false;
+  if(state.bu && !buMatch(r)) return false;
+  if(state.team && (r.team_name_en||r.team_short||'')!==state.team) return false;
+  if(state.mkt && r.marketing_fullname!==state.mkt) return false;
+  if(!dealerMatch(r)) return false;
+  if(state.showroom && r.showroom_name_en!==state.showroom) return false;
+  return true;
+}
 function _hmTeamLabel(sh){
   if(!sh.team) return '<span class="hm-sub">— ยังไม่ระบุทีม —</span>';
   const th=hubOf(sh.team), own=_hmUnit(sh.hub);
@@ -4470,7 +4481,7 @@ function _hmTeamLabel(sh){
 }
 /* สร้างมุมมองของหน้า: เคสในช่วงเวลา + สรุปต่อสาขา (รวมสาขาที่ไม่มีเคส) */
 function _hmBuild(){
-  let rows=ALL.filter(r=>r.hm && _hmHubPass(r.hm) && _hmPerPass(r));
+  let rows=ALL.filter(r=>r.hm && _hmHubPass(r.hm) && _hmPerPass(r) && _hmOtherPass(r));
   _hmRowsCache=rows;
   /* เคสล่าสุด (ทั้งปี ไม่ขึ้นกับช่วงเวลา) */
   const lastAll={};
@@ -4539,7 +4550,7 @@ function renderHubMaster(){
   if(nEl) nEl.innerHTML='ช่วงเวลา: <b>'+_esc(_hmPerLabel())+'</b> · '
     +'ทุกเคสของร้าน Sub (สาขา BY) ใน Hub Master นับให้ <b>Hub RM เจ้าของ Hub</b> คนเดียว — '
     +'ผลงานทีมในหน้าอื่นยังนับตามทีมที่รับเคสเหมือนเดิม · '
-    +'หน้านี้ใช้ตัวกรอง AM / Hub RM (= เจ้าของ Hub) และไม่ขึ้นกับตัวกรองทีม/ผู้ทำเคส/BU'
+    +'หน้านี้ตามตัวกรองด้านบนทุกตัว: AM / Hub RM = เลือกเจ้าของ Hub · ตัวกรองอื่น (ช่วงเวลา / BU / ทีม / ผู้ทำเคส / Dealer ฯลฯ) = กรองเคสของร้าน Sub'
     +(_hmUserOnly?' · <b style="color:#1A3A6B">แสดงเฉพาะร้านที่มี User</b> (ซ่อนร้านที่ยังไม่มี User และไม่มีเคส · ร้านที่มีเคสแสดงเสมอ ยอดเคสของ Hub จึงครบ — กดปุ่ม 👤 เพื่อดูทุกร้าน)':'');
 
   const AM_NAME={RM1:'AM1 · ศรีสุดา (หมวย)',RM2:'AM2 · อภิสิทธิ์ (ปุ้ย)',RM3:'AM3 · จารนัย (เพียว)',RM4:'AM4 · รักษ์พล (โต้ง)'};
