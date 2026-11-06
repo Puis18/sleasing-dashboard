@@ -1237,14 +1237,9 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
 
     <div class="section-title"><span class="bar"></span>📈 Sales Volume &amp; Financials</div>
     <div class="card chart-card">
-      <div style="font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:2px">Daily Contract Volume</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">จำนวนเคสและยอด Finance รายวัน</div>
+      <div id="volTitle" style="font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:2px">Daily Contract Volume</div>
+      <div id="volSub" style="font-size:11px;color:var(--muted);margin-bottom:10px">จำนวนเคสและยอด Finance รายวัน</div>
       <div class="chart-wrap med"><canvas id="dailyVolumeChart"></canvas></div>
-    </div>
-    <div class="card chart-card" style="margin-top:12px">
-      <div style="font-weight:700;font-size:12.5px;color:var(--navy);margin-bottom:2px">Monthly Contract Volume</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">จำนวนเคสและยอด Finance รายเดือน</div>
-      <div class="chart-wrap med"><canvas id="monthlyVolumeChartP"></canvas></div>
     </div>
 
     <div class="section-title"><span class="bar"></span>🔑 Top Takeaways</div>
@@ -3818,7 +3813,8 @@ function renderCharts(d){
     });
   }
   dc('dailyVolumeChart');
-  charts.dailyVolumeChart  = _mkDailyVolumeChart('dailyVolumeChart', dailyData);
+  /* กราฟเดียว (06/11/2026): ข้อมูลที่กรองอยู่ในเดือนเดียว → รายวัน · ตั้งแต่ 2 เดือนขึ้นไป → รายเดือน */
+  const _volMonthly = monthlyData.length >= 2;
 
   // ── Monthly Volume Chart (shared config) ──
   function _mkMonthlyVolumeChart(canvasId){
@@ -3856,9 +3852,12 @@ function renderCharts(d){
       }
     });
   }
-  dc('monthlyVolumeChart'); dc('monthlyVolumeChartP');
-  charts.monthlyVolumeChart  = _mkMonthlyVolumeChart('monthlyVolumeChart');
-  charts.monthlyVolumeChartP = _mkMonthlyVolumeChart('monthlyVolumeChartP');
+  charts.dailyVolumeChart = _volMonthly
+    ? _mkMonthlyVolumeChart('dailyVolumeChart')
+    : _mkDailyVolumeChart('dailyVolumeChart', dailyData);
+  { const t=document.getElementById('volTitle'), s=document.getElementById('volSub');
+    if(t) t.textContent = _volMonthly ? 'Monthly Contract Volume' : 'Daily Contract Volume';
+    if(s) s.textContent = _volMonthly ? `จำนวนเคสและยอด Finance รายเดือน (${monthlyData.length} เดือน)` : 'จำนวนเคสและยอด Finance รายวัน'; }
   const C_BLUE='#2E75B6',C_GREEN='#548235',C_GOLD='#BF8F00',C_RED='#C00000';
 
   // ── Section title update ──
@@ -5331,7 +5330,7 @@ function render(){
       const _need=Math.round(targetApps*_pc/100), _gap=_need-k.apps;
       const _paceTxt=_pc<100?` · ควรได้ ณ วันที่ ${_d} = <b>${fmtPct(_pc)}</b> (${fmtInt(_need)} เคส)`:'';
       const _tail=_pc<100?(_gap>0?` — ช้ากว่าจังหวะ <b>${fmtInt(_gap)} เคส</b>`:` — ทันจังหวะแล้ว`):'';
-      const _rest=targetApps>k.apps?` · เป้าทั้งเดือน ${_tgtLbl} = ${fmtInt(targetApps)} ยังขาด ${fmtInt(targetApps-k.apps)} เคส`:` · เกินเป้าหมาย ${_tgtLbl}`;
+      const _rest=targetApps>k.apps?` · ${_pc<100?'เป้าทั้งเดือน':'เป้า'} ${_tgtLbl} = ${fmtInt(targetApps)} ยังขาด ${fmtInt(targetApps-k.apps)} เคส`:` · เกินเป้าหมาย ${_tgtLbl}`;
       const _c=achievePct>=_pc?'green':achievePct>=_pc*0.8?'gold':'red';
       raw.push({keep:1,c:_c,t:`% Achieve Target: ${_c==='green'?'✅':_c==='gold'?'🟡':'🔴'} ทำได้ <b>${fmtPct(achievePct)}</b>${_paceTxt}${_tail}${_rest}`});
     }
