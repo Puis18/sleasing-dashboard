@@ -369,12 +369,15 @@ const incF=n=>'฿'+Math.round(n||0).toLocaleString('en-US');
 const incPosOf=p=>p==='Broker'?'Broker':p==='Agent'?'Agent':'Checker';
 const incMon=r=>r.brand_name==='APPLE'?'ap':'an';
 
+/* พนักงานร้าน (Dealer Staff) ที่ระบบจัดเป็น "พนักงาน" ผิด ให้นับเป็นเคส Dealer เสมอ
+   (ทดสอบกับไฟล์ MIS ก.ย. 69: ทีม N1101 เกิน 4 เคสเพราะจุดนี้) */
+const incB=r=>r.app_mkt_position==='Dealer Staff'?'dlr':bkt(r);
 function incBuild(rows,sc){
  const sk=x=>Math.round(x*sc);
  const out={ck:[],tm:[],hub:[],am:[]};
  /* --- พนักงาน CK/BK/AG --- */
  const P={};
- rows.forEach(r=>{if(!isStaff(r))return;const k=r.marketing_fullname,q=P[k]||(P[k]={t:r.team_short,pos:{},ap:0,an:0,el:0,ia:0,in_:0});
+ rows.forEach(r=>{if(!isStaff(r)||incB(r)!=='emp')return;const k=r.marketing_fullname,q=P[k]||(P[k]={t:r.team_short,pos:{},ap:0,an:0,el:0,ia:0,in_:0});
   q.pos[r.app_mkt_position]=(q.pos[r.app_mkt_position]||0)+1;
   if(isMo(r)){q[incMon(r)]++;if((r.protected_amt||0)>0)q[incMon(r)==='ap'?'ia':'in_']++}else if(r.sub_product_type_code==='01')q.el++});
  Object.keys(P).forEach(k=>{const q=P[k];const pos=incPosOf(Object.keys(q.pos).sort((a,b)=>q.pos[b]-q.pos[a])[0]);
@@ -385,7 +388,7 @@ function incBuild(rows,sc){
  /* --- TM / Hub RM / AM : นับเคสพนักงาน (CK/BK/AG ที่ไม่ใช่ TM ทำเอง) และเคส Dealer Staff --- */
  const G={tm:{},hub:{},am:{}};
  const ent=(g,k,init)=>g[k]||(g[k]=Object.assign({ap:0,an:0,insS:0,insD:0,iaS:0,inS:0,iaD:0,inD:0,nS:0,nD:0},init));
- rows.forEach(r=>{const ts=r.team_short||'-',b=bkt(r),lead=!!r.is_leader_as_mkt,mo=isMo(r),ins=mo&&(r.protected_amt||0)>0;
+ rows.forEach(r=>{const ts=r.team_short||'-',b=incB(r),lead=!!r.is_leader_as_mkt,mo=isMo(r),ins=mo&&(r.protected_amt||0)>0;
   const hubK=TEAM_HUB[ts],amK=amOf(ts)||r.region_manager_fullname||'';
   const mk=nm(r.marketing_fullname||''),own=lead||LEAD.has(mk),O=()=>({own:{ap:0,an:0,el:0,ia:0,in_:0,n:0}});
   const tgt=[['tm',ts,Object.assign({tl:r.team_leader_fullname||'',who:nm(r.team_leader_fullname||'')},O())]];
