@@ -205,7 +205,7 @@ const pass=(r,skip)=>{const ts=r.team_short||'';
  if(skip!=='tm'&&S.tm&&ts!==S.tm)return false;
  return true};
 const nk=n=>MI[n]&&MI[n].nick?n+' ('+MI[n].nick+')':n;
-const isStaff=r=>r.marketing_fullname&&r.marketing_fullname!=='—'&&!r.is_leader_as_mkt&&bkt(r)==='emp'&&(r.hist_ovr===1||!LEAD.has(nm(r.marketing_fullname)));
+const isStaff=r=>r.marketing_fullname&&r.marketing_fullname!=='—'&&!r.is_leader_as_mkt&&bkt(r)==='emp'&&!LEAD.has(nm(r.marketing_fullname));
 document.addEventListener('mousemove',e=>{const t=e.target.closest('[data-t]'),tp=$('tip');if(t){tp.textContent=t.dataset.t;tp.style.opacity=1;tp.style.left=Math.min(e.clientX+12,innerWidth-230)+'px';tp.style.top=e.clientY-34+'px'}else tp.style.opacity=0});
 function opts(sel,list,val,all){sel.innerHTML=`<option value="">${all}</option>`+list.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');sel.value=list.some(x=>x[0]===val)?val:'';return sel.value}
 function fill(){
@@ -390,7 +390,7 @@ function incBuild(rows,sc){
  const ent=(g,k,init)=>g[k]||(g[k]=Object.assign({ap:0,an:0,insS:0,insD:0,iaS:0,inS:0,iaD:0,inD:0,nS:0,nD:0},init));
  rows.forEach(r=>{const ts=r.team_short||'-',b=incB(r),lead=!!r.is_leader_as_mkt,mo=isMo(r),ins=mo&&(r.protected_amt||0)>0;
   const hubK=TEAM_HUB[ts],amK=amOf(ts)||r.region_manager_fullname||'';
-  const mk=nm(r.marketing_fullname||''),own=r.hist_ovr===1?lead:(lead||LEAD.has(mk)),O=()=>({own:{ap:0,an:0,el:0,ia:0,in_:0,n:0}});
+  const mk=nm(r.marketing_fullname||''),own=lead||LEAD.has(mk),O=()=>({own:{ap:0,an:0,el:0,ia:0,in_:0,n:0}});
   const tgt=[['tm',ts,Object.assign({tl:r.team_leader_fullname||'',who:nm(r.team_leader_fullname||'')},O())]];
   if(hubK)tgt.push(['hub',hubK,Object.assign({who:HUB_INFO[hubK]?nm(HUB_INFO[hubK].rm):''},O())]);if(amK)tgt.push(['am',amK,Object.assign({who:''},O())]);
   tgt.forEach(([g,k,init])=>{const e=ent(G[g],k,init);
