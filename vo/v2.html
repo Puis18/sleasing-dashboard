@@ -137,7 +137,7 @@ html{font-size:clamp(13px,0.55vw + 8px,18px)}body{font-size:1rem}
 <div class="card"><h3>สัญญารายวัน <small id="dlab"></small></h3><svg id="cD" viewBox="0 0 600 230" width="100%"></svg></div></div>
 <div class="grid c3">
 <div class="card"><h3>% Achieve Target <small id="tgl"></small></h3><svg id="cG" viewBox="0 0 200 118" width="100%"></svg><div class="lab" id="gl" style="text-align:center"></div></div>
-<div class="card"><h3>ทีมตามเป้า <small id="dotl"></small></h3><div id="dots" class="dots"></div><div class="lab" style="margin-top:10px">เทียบกับที่ควรได้ ณ วันนี้: <b style="color:var(--green)">●</b> ตามเป้า <b style="color:var(--amber)">●</b> 80–99% <b style="color:var(--red)">●</b> ต่ำกว่า 80%</div></div>
+<div class="card"><h3>ทีมตามเป้า <small id="dotl"></small></h3><div id="dots" class="dots"></div><div class="lab" style="margin-top:10px">คาดสิ้นเดือน (ตามจังหวะ ณ วันนี้) เทียบเป้า: <b style="color:var(--green)">●</b> ≥100% <b style="color:var(--amber)">●</b> 80–99% <b style="color:var(--red)">●</b> ต่ำกว่า 80%</div></div>
 <div class="card"><h3>ทีมยอดสูงสุด <small>สัญญา</small></h3><div id="top5"></div></div></div>
 <div class="grid"><div class="card" id="warn"></div></div>
 </section>
@@ -297,7 +297,7 @@ function R(){
  const top=teams.sort((a,b)=>T[b].n-T[a].n).slice(0,5),tmx=top[0]?T[top[0]].n:1;
  top5.innerHTML=top.map((t,i)=>`<div class="row"><div class="av">${i+1}</div><div class="n"><div>${T[t].lead||sh(t)}</div><small>${sh(t)}</small><div class="mb"><i style="width:${T[t].n/tmx*100}%"></i></div></div><b>${f(T[t].n)}</b></div>`).join('');
  /* warnings */
- const z3=teams.filter(t=>T[t].l3===0),z0=teams.filter(t=>T[t].l===0&&T[t].l3>0),low=newT&&isCur?teams.map(t=>[t,T[t].n/day*dim]).filter(x=>x[1]<400).sort((a,b)=>a[1]-b[1]):[];
+ const z3=teams.filter(t=>T[t].l3===0),z0=teams.filter(t=>T[t].l===0&&T[t].l3>0),low=newT&&isCur?teams.map(t=>[t,T[t].n/day*dim,tT(t)]).filter(x=>x[2]>0&&x[1]<x[2]*0.8).sort((a,b)=>(a[1]/a[2])-(b[1]/b[2])):[];
  const miss=newT&&isCur?teams.map(t=>[t,T[t].n/day*dim,tT(t)]).filter(x=>x[2]>0&&x[1]<x[2]&&x[1]>=x[2]*0.8).sort((a,b)=>(a[1]/a[2])-(b[1]/b[2])):[];
  const exS=Math.round(pT*day/dim),lowS=Object.keys(P).map(k=>[k,P[k],exS-P[k].n]).filter(x=>x[2]>0).sort((a,b)=>b[2]-a[2]);
  const chips=(a,fn,max=24)=>a.length?a.slice(0,max).map(fn).join('')+(a.length>max?`<span class="chip more">+${a.length-max}</span>`:''):'<span class="ok">ไม่มี 👍</span>';
@@ -305,7 +305,7 @@ function R(){
  <div class="wh">🔴 ทีมที่ไม่มีเคส 3 วันติด (${z3.length})</div>${chips(z3,t=>`<span class="chip" onclick="S.tm='${t}';R()">${sh(t)}</span>`)}
  <div class="wh">🟠 ทีมที่ไม่มีเคสวันที่ ${L?dl(L):''} (${z0.length})</div>${chips(z0,t=>`<span class="chip" onclick="S.tm='${t}';R()">${sh(t)}</span>`)}
  ${newT&&isCur?`<div class="wh">⚠️ ทีมที่คาดว่าจะตกเป้า 80–99% (${miss.length})</div>${chips(miss,x=>`<span class="chip" onclick="S.tm='${x[0]}';R()">${sh(x[0])} · คาด ${f(x[1])}/${f(x[2])} (ขาด ${f(x[2]-x[1])})</span>`,24)}`:''}
- ${newT&&isCur?`<div class="wh">📉 ทีมที่คาดว่าจบต่ำกว่า 80% ของเป้า (${low.length})</div>${chips(low,x=>`<span class="chip" onclick="S.tm='${x[0]}';R()">${sh(x[0])} · คาด ${f(x[1])}</span>`,12)}`:''}
+ ${newT&&isCur?`<div class="wh">📉 ทีมที่คาดว่าจบต่ำกว่า 80% ของเป้า (${low.length})</div>${chips(low,x=>`<span class="chip" onclick="S.tm='${x[0]}';R()">${sh(x[0])} · คาด ${f(x[1])}/${f(x[2])} (ขาด ${f(x[2]-x[1])})</span>`,24)}`:''}
  <div class="wh">👤 พนักงานต่ำกว่าที่ควรได้ ณ วันนี้ (${lowS.length} คน · ควรได้ ${exS} เคส)</div>${chips(lowS,x=>`<span class="chip">${nk(x[0])} (${sh(x[1].t)}) ${x[1].n}/${pT}</span>`,12)}`;
  /* team table */
  TB.tm.rows=teams.map(t=>{const x=T[t],g=tT(t),fcT=isCur?x.n/day*dim:x.n;return{t,'ทีม':sh(t),'หัวหน้าทีม':x.lead,'AM':(amOf(t)||'MC').replace('RM','AM'),'สัญญา':x.n,'เป้า':g,'% Achieve':+pc(x.n,g).toFixed(1),'ทำได้/ควรได้ %':+pc(pc(x.n,g),exp).toFixed(0),'คาดสิ้นเดือน':Math.round(fcT),'%Mobile Care':+pc(x.ins,x.mo).toFixed(1),'% ร้านทำ':+pc(x.dl,x.n).toFixed(1),'ยอดจัด':Math.round(x.f)}});drawTB('tm');
@@ -333,7 +333,7 @@ function lineText(){const o=CTX,SEP='━━━━━━━━━━━━━━�
  ln.push('• สะสม '+f(o.A.n)+' / เป้า '+f(o.tgt)+' = '+o.ach.toFixed(0)+'%','  ควรได้ ณ วันนี้ '+o.exp.toFixed(0)+'% → '+lab,'• ต้องทำต่อวัน '+f(o.need)+' · คาดสิ้นเดือน '+f(o.fc)+' ('+o.fcp.toFixed(0)+'%)');
  const tot=o.A.ne+o.A.dl||1;ln.push('','② ผู้ทำเคส (สะสมเดือนนี้)','• พนักงานทำ '+f(o.A.ne)+' ('+(o.A.ne/tot*100).toFixed(0)+'%)','• ร้านทำ '+f(o.A.dl)+' ('+(o.A.dl/tot*100).toFixed(0)+'%)');
  const U=[],seen={};o.z3.forEach(t=>{U.push([t,'ไม่มีเคส 3 วันติด']);seen[t]=1});
- if(o.newT&&o.isCur)o.teams.map(t=>[t,o.T[t].n/o.day*o.dim]).filter(x=>x[1]<400&&!seen[x[0]]).sort((a,b)=>a[1]-b[1]).forEach(x=>{U.push([x[0],'คาดจบ '+f(x[1])+' ('+(x[1]/5).toFixed(0)+'% ของเป้า)']);seen[x[0]]=1});
+ if(o.newT&&o.isCur)o.teams.map(t=>[t,o.T[t].n/o.day*o.dim,o.tT(t)]).filter(x=>x[2]>0&&x[1]<x[2]*0.8&&!seen[x[0]]).sort((a,b)=>a[1]/a[2]-b[1]/b[2]).forEach(x=>{U.push([x[0],'คาดจบ '+f(x[1])+' ('+(x[1]/x[2]*100).toFixed(0)+'% ของเป้า)']);seen[x[0]]=1});
  o.teams.filter(t=>o.T[t].n>=10&&o.T[t].dl/o.T[t].n>0.7&&!seen[t]).sort((a,b)=>o.T[b].dl/o.T[b].n-o.T[a].dl/o.T[a].n).forEach(t=>U.push([t,'ร้านทำเคส '+(o.T[t].dl/o.T[t].n*100).toFixed(0)+'% (พนักงานทำน้อย)']));
  if(U.length){ln.push('',SEP,'③ 🔴 ทีมที่ต้องคุยด่วน');U.slice(0,5).forEach(x=>ln.push('• '+sh(x[0])+' – '+x[1]));ln.push(...more(U,5,'ทีม'))}
  if(o.z0.length)ln.push('',SEP,'④ 🟠 ทีมที่ไม่มีเคสเมื่อวาน ('+o.z0.length+')',o.z0.slice(0,10).map(sh).join(', ')+(o.z0.length>10?' …และอีก '+(o.z0.length-10)+' ทีม':''));
