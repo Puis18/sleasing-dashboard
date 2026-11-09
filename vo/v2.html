@@ -456,6 +456,16 @@ function incRender(ctx){
   tm:{lab:'TM (หัวหน้าทีม)',cols:['ทีม','หัวหน้าทีม (TM)','Apple (พนักงาน)','Android (พนักงาน)','เคส Dealer Staff','ประกัน Apple (พนง.)','ประกัน Android (พนง.)','ประกัน Apple (Dealer)','ประกัน Android (Dealer)','ค่าสัญญา','ค่าประกัน','ทำเอง (เรท Checker)','รวม','คาดสิ้นเดือน'],t:'ทีม'},
   hub:{lab:'Hub RM',cols:['Hub','Hub RM','AM','Apple (พนักงาน)','Android (พนักงาน)','เคส Dealer Staff','ประกัน Apple (พนง.)','ประกัน Android (พนง.)','ประกัน Apple (Dealer)','ประกัน Android (Dealer)','ค่าสัญญา','ค่าประกัน','ทำเอง (เรท Checker)','รวม','คาดสิ้นเดือน'],t:'Hub'},
   am:{lab:'AM',cols:['AM','Apple (พนักงาน)','Android (พนักงาน)','เคส Dealer Staff','ประกัน Apple (พนง.)','ประกัน Android (พนง.)','ประกัน Apple (Dealer)','ประกัน Android (Dealer)','ค่าสัญญา','ค่าประกัน','รวม','คาดสิ้นเดือน'],t:'AM'}};
+ /* แสดงจากระดับที่กรองลงไปเท่านั้น (09/11/2026): กรองทีม → TM, CK · กรอง Hub → Hub RM, TM, CK · กรอง AM → AM, (Hub), TM, CK
+    ระดับที่อยู่เหนือตัวกรองจะเห็นยอดแค่บางส่วน (เช่น AM ที่คิดจากทีมเดียว) จึงซ่อนไว้ไม่ให้เข้าใจผิด */
+ const _allow=S.tm?['tm','ck']:S.hb?['hub','tm','ck']:(S.am&&!RM_KEYS.has(S.am))?['am','tm','ck']:['am','hub','tm','ck'];
+ /* ขอบเขตตามสิทธิ์ข้อมูลของผู้ใช้ (ในออฟฟิศ หน้านี้ได้ข้อมูลเฉพาะทีมที่ตัวเองมีสิทธิ์): ทีมเดียว → TM, CK · Hub เดียว → Hub RM, TM, CK · AM เดียว → AM, Hub, TM, CK
+    ไม่กรอง = เห็นเฉพาะของตนเองและระดับที่อยู่ใต้ตนเองเท่านั้น · ใช้ระดับที่แคบกว่าระหว่างตัวกรองกับสิทธิ์ข้อมูล */
+ if(!window.__incLv||window.__incLv.a!==ALL){const T=new Set(),H=new Set(),A=new Set();ALL.forEach(r=>{const t=r.team_short||'';if(!/^TEAM/.test(t)||!isEA(t))return;T.add(t);H.add(TEAM_HUB[t]||'');A.add(amOf(t))});
+  window.__incLv={a:ALL,v:T.size<=1?['tm','ck']:(H.size===1&&!H.has(''))?['hub','tm','ck']:A.size===1?['am','hub','tm','ck']:['am','hub','tm','ck']}}
+ const _own=window.__incLv.v;
+ for(let i=_allow.length-1;i>=0;i--)if(!_own.includes(_allow[i]))_allow.splice(i,1);
+ if(!_allow.includes(INC.v)){INC.v=_allow[0];INC.k='รวม';INC.d=-1}
  const cur=D[INC.v],vv=V[INC.v];
  const sum=k=>cur.reduce((s,x)=>s+(x[k]||0),0);
  const tot=sum('รวม'),pj=sum('คาดสิ้นเดือน');
@@ -465,7 +475,7 @@ function incRender(ctx){
  if(INC.v==='ck'){const lowIns=cur.filter(x=>x['ตัวคูณ']<1).length,near=cur.filter(x=>x._nx&&x._nx.need<=5);
   k4+=`<div class="card"><div class="lab">โดนลดเหลือ 50% (Mobile Care &lt; 60%)</div><div class="big" style="color:var(--red)">${f(lowIns)}</div><div class="lab">คน · ยอดที่หายไป ≈ ${incF(cur.reduce((s,x)=>s+(x['ตัวคูณ']<1?(x['ค่าสัญญา']+x['ค่าประกัน'])*.5:0),0))}</div></div>
   <div class="card"><div class="lab">ใกล้ขึ้นขั้นถัดไป (≤5 เคส)</div><div class="big" style="color:var(--green)">${f(near.length)}</div><div class="lab">คน</div></div>`}
- const btn=Object.keys(V).map(k=>`<button class="tab ${k===INC.v?'on':''}" onclick="INC.v='${k}';INC.k='รวม';INC.d=-1;R()">${V[k].lab}</button>`).join('');
+ const btn=Object.keys(V).filter(k=>_allow.includes(k)).map(k=>`<button class="tab ${k===INC.v?'on':''}" onclick="INC.v='${k}';INC.k='รวม';INC.d=-1;R()">${V[k].lab}</button>`).join('');
  let near='';
  if(INC.v==='ck'){const a=cur.filter(x=>x._nx&&x._nx.need<=5).sort((x,y)=>x._nx.need-y._nx.need||y._nx.gain-x._nx.gain);
   near=`<div class="card"><h3>🎯 ใกล้ขั้นถัดไป <small>เคสที่ขาดเพื่อขึ้นเรทใหม่ (ใช้กระตุ้นทีม)</small></h3>${a.length?a.slice(0,30).map(x=>`<span class="chip">${x['พนักงาน']} (${x['ทีม']}) · ${x._nx.k} อีก ${x._nx.need} เคส → เรท ${x._nx.rate}</span>`).join('')+(a.length>30?`<span class="chip more">+${a.length-30}</span>`:''):'<span class="ok">ไม่มีใครใกล้ขั้นถัดไป</span>'}</div>`}
