@@ -2730,7 +2730,7 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
 const XLS_COLS = [
   ['วันที่สัญญา',        r=>r._date||'',                                    12],
   ['เลขที่สัญญา',        r=>r.contract_no||_xCon(r),                        18],
-  ['เลขที่ใบสมัคร',      r=>r.application_no||'',                           18],
+  ['เลขที่ใบสมัคร',      r=>r.application_no||_xApp(r),                     18],
   ['ชื่อลูกค้า',          r=>r.customer_name||'',                            26],
   ['Dealer',            r=>String(r.dealer_name_en||'').replace(/\s*\((No )?VAT\)$/,''), 28],
   ['VAT',               r=>/\(VAT\)$/.test(r.dealer_name_en||'')?'VAT':(/\(No VAT\)$/.test(r.dealer_name_en||'')?'No VAT':''), 8],
@@ -2776,13 +2776,13 @@ function _csvDownload(rows, name){
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name+'.csv';
   document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);
 }
-let _XM=null; function _xRow(r){const e=_XM&&r&&r._k?_XM[r._k]:null; return Array.isArray(e)?e:null;} function _xCon(r){const e=_xRow(r); return e?(e[0]||''):'';} function _imeiSplit(v){const im=[],sn=[];String(v||'').replace(/[,;|/]/g,' ').split(' ').filter(Boolean).forEach(x=>{(x.length>=14&&x.length<=15&&!/[^0-9]/.test(x)?im:sn).push(x);});return {imei:im.join(' / '),sn:sn.join(' / ')};} async function _imeiGate(){ let r; try{ r=await fetch('imei.enc.json?v='+Date.now()); }catch(e){ return null; } if(!r.ok) return null; const pw=prompt('ใส่รหัสเพื่อส่งออกไฟล์รายสัญญา (ไฟล์จะมีเลขที่สัญญา IMEI และ S/N)'); if(!pw) throw new Error('cancel'); const j=await r.json(); const b=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0)); const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']); const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b(j.salt),iterations:j.iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']); const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b(j.iv)},key,b(j.ct)); const txt=await new Response(new Blob([pt]).stream().pipeThrough(new DecompressionStream('deflate'))).text(); return JSON.parse(txt); } async function exportFilteredExcel(){
+let _XM=null; function _xRow(r){const e=_XM&&r&&r._k?_XM[r._k]:null; return Array.isArray(e)?e:null;} function _xCon(r){const e=_xRow(r); return e?(e[0]||''):'';} function _xApp(r){const e=_xRow(r); return e?(e[2]||''):'';} function _imeiSplit(v){const im=[],sn=[];String(v||'').replace(/[,;|/]/g,' ').split(' ').filter(Boolean).forEach(x=>{(x.length>=14&&x.length<=15&&!/[^0-9]/.test(x)?im:sn).push(x);});return {imei:im.join(' / '),sn:sn.join(' / ')};} async function _imeiGate(){ let r; try{ r=await fetch('imei.enc.json?v='+Date.now()); }catch(e){ return null; } if(!r.ok) return null; const pw=prompt('ใส่รหัสเพื่อส่งออกไฟล์รายสัญญา (ไฟล์จะมีเลขที่สัญญา เลขที่ใบสมัคร IMEI และ S/N)'); if(!pw) throw new Error('cancel'); const j=await r.json(); const b=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0)); const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']); const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b(j.salt),iterations:j.iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']); const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b(j.iv)},key,b(j.ct)); const txt=await new Response(new Blob([pt]).stream().pipeThrough(new DecompressionStream('deflate'))).text(); return JSON.parse(txt); } async function exportFilteredExcel(){
   const rows = getFiltered();
   if(!rows.length){ alert('ไม่มีรายการสัญญาตามตัวกรองปัจจุบัน'); return; }
   if(!state.dealer && !state.showroom && rows.length>20000){
     if(!confirm(`ยังไม่ได้เลือก Dealer — จะส่งออกทั้งหมด ${rows.length.toLocaleString()} สัญญา\nต้องการดำเนินการต่อหรือไม่?`)) return;
   }
-  let _m=null; try{ _m=await _imeiGate(); }catch(e){ alert('รหัสไม่ถูกต้อง หรือยกเลิก — ไม่ส่งออกไฟล์'); return; } if(_m){ _XM=_m; const _ik=r=>{const e=_xRow(r); return e?e[1]:_m[String(r.contract_no||'').trim()];}; XLS_COLS.push(['IMEI',r=>_imeiSplit(_ik(r)).imei,20],['S/N',r=>_imeiSplit(_ik(r)).sn,22]); } const btns=[...document.querySelectorAll('.xls-export-btn')];
+  let _m=null, _ix=false; try{ _m=await _imeiGate(); }catch(e){ alert('รหัสไม่ถูกต้อง หรือยกเลิก — ไม่ส่งออกไฟล์'); return; } if(_m){ _XM=_m; const _ik=r=>{const e=_xRow(r); return e?e[1]:_m[String(r.contract_no||'').trim()];}; XLS_COLS.push(['IMEI',r=>_imeiSplit(_ik(r)).imei,20],['S/N',r=>_imeiSplit(_ik(r)).sn,22]); _ix=true; } else if(rows.some(r=>r.imei)){ XLS_COLS.push(['IMEI',r=>_imeiSplit(r.imei).imei,20],['S/N',r=>_imeiSplit(r.imei).sn,22]); _ix=true; } let _nmCol=null; if(!rows.some(r=>r.customer_name)){ const _ni=XLS_COLS.findIndex(c=>c[0]==='ชื่อลูกค้า'); if(_ni>=0) _nmCol=[_ni,XLS_COLS.splice(_ni,1)[0]]; } const btns=[...document.querySelectorAll('.xls-export-btn')];
   btns.forEach(b=>{ b.disabled=true; b.dataset.t=b.innerHTML; b.innerHTML='⏳ กำลังสร้างไฟล์…'; });
   try{
     const sorted = rows.slice().sort((a,b)=>{
@@ -2844,7 +2844,7 @@ let _XM=null; function _xRow(r){const e=_XM&&r&&r._k?_XM[r._k]:null; return Arra
   } catch(e){
     console.error(e); alert('ส่งออกไม่สำเร็จ: '+(e&&e.message||e));
   } finally {
-    if(_m) XLS_COLS.splice(-2,2); _XM=null; btns.forEach(b=>{ b.disabled=false; if(b.dataset.t) b.innerHTML=b.dataset.t; });
+    if(_ix) XLS_COLS.splice(-2,2); if(_nmCol) XLS_COLS.splice(_nmCol[0],0,_nmCol[1]); _XM=null; btns.forEach(b=>{ b.disabled=false; if(b.dataset.t) b.innerHTML=b.dataset.t; });
     _updateExportHint();
   }
 }
