@@ -468,6 +468,11 @@ function incRender(ctx){
  if(!window.__incLv||window.__incLv.a!==ALL){const T=new Set(),H=new Set(),A=new Set();ALL.forEach(r=>{const t=r.team_short||'';if(!/^TEAM/.test(t)||!isEA(t))return;T.add(t);H.add(TEAM_HUB[t]||'');A.add(amOf(t))});
   window.__incLv={a:ALL,v:T.size<=1?['tm','ck']:(H.size===1&&!H.has(''))?['hub','tm','ck']:A.size===1?['am','hub','tm','ck']:['am','hub','tm','ck']}}
  const _own=window.__incLv.v;
+ /* หน้า Incentive ใช้ได้เฉพาะระดับ Hub RM ขึ้นไป (ขอบเขตข้อมูลต้องครอบคลุมมากกว่าหนึ่งทีม) */
+ const _ok=_own.includes('hub'),_tb=document.querySelector('.tab[data-p="in"]');
+ if(_tb)_tb.style.display=_ok?'':'none';
+ if(!_ok){el.innerHTML='<div class="grid"><div class="card"><h3>🔒 หน้านี้สำหรับ Hub RM ขึ้นไป</h3><p class="note">Incentive ฝั่งปล่อยสินเชื่อแสดงเฉพาะผู้ใช้ระดับ Hub RM / AM ขึ้นไป</p></div></div>';
+  if(el.classList.contains('on')){const o=document.querySelector('.tab[data-p="ov"]');if(o)o.click()}return}
  for(let i=_allow.length-1;i>=0;i--)if(!_own.includes(_allow[i]))_allow.splice(i,1);
  if(!_allow.includes(INC.v)){INC.v=_allow[0];INC.k='รวม';INC.d=-1}
  const cur=D[INC.v],vv=V[INC.v];
