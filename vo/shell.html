@@ -1119,6 +1119,16 @@ tbody tr:hover,.ins-tbl tbody tr:hover td{background:var(--row-hover);}
 /* โฟกัสด้วยคีย์บอร์ดให้เห็นชัด */
 button:focus-visible,select:focus-visible,input:focus-visible,.pnav-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
 button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
+/* ── แถบเมนูล่างบน iPhone (19/11/2026): ความสูงเดิมรวมช่องขีดปัดหน้าจอ ทำให้ไอคอน/ชื่อแท็บล้นทับเส้นเขียวและถูกตัด
+   → ความสูง = แถบ + ช่องขีดปัดหน้าจอ · ตัวหนังสือเข้มขึ้นและใหญ่ขึ้น · แท็บที่เลือกชัดขึ้น · ชื่อยาวขึ้นบรรทัดสองได้ ── */
+.page-nav{height:calc(var(--nav-h) + env(safe-area-inset-bottom,0px));box-sizing:border-box;}
+.pnav-btn{color:#475569;font-weight:700;justify-content:flex-start;padding-top:6px;}
+.pnav-btn.active{color:var(--navy);background:#E3F1E8;border-top-color:var(--green);}
+.pnav-btn .ico svg{width:21px;height:21px;}
+@media(max-width:520px){
+  .pnav-btn{font-size:9.5px;line-height:1.15;padding:6px 1px 2px;overflow-wrap:normal;word-break:normal;}
+}
+@media(max-width:360px){.pnav-btn{font-size:8.5px;}}
 .fbar-sec-label{font-weight:700;}
 </style>
 <meta name="robots" content="noindex,nofollow"><style>[data-page="p6"]{display:none!important}</style></head>
@@ -4338,6 +4348,26 @@ function _isLdr(r){
   const n=String(r.marketing_fullname||'').replace(/\s+/g,' ').trim(), a=String(r.app_mkt_fullname||'').replace(/\s+/g,' ').trim();
   return _HUB_RM_NAMES.has(n) || _HUB_RM_NAMES.has(a);
 }
+/* พนักงาน Active ที่ยังไม่มีเคสเลยในช่วงที่เลือก (0 เคส) — 08/11/2026 (เพิ่มตามที่พบน้องทีม C1402 หายจากตาราง)
+   แสดงเฉพาะในลำดับ/ตารางรายคน (CK table, Bottom 10, Productivity) · ไม่เข้ายอดรวม เป้า จำนวนคน หรือสูตรใด ๆ
+   เงื่อนไข: ดูเดือนล่าสุดของข้อมูลเดือนเดียว · ไม่กรอง ผลิตภัณฑ์/ผู้ทำเคส/VAT/CK/Dealer/Showroom/ไตรมาส · ทีมอยู่ในข้อมูลที่ผู้ใช้ได้รับ
+   ข้อมูลมาจาก MASTER Sales Name list (mkt_info: tm / pos / act) — คนที่ไม่มีข้อมูลทีม/สถานะ จะไม่ถูกแสดง */
+function _zeroStaff(have){
+  if(state.scope!=='all'||state.maker||state.vat||state.mkt||state.dealer||state.showroom||state.quarter) return [];
+  if(!window.__LMs){ let mx='';ALL.forEach(r=>{if(r._date&&r._date>mx)mx=r._date}); window.__LMs={y:mx.slice(0,4),m:mx.slice(5,7),T:new Set(ALL.map(r=>r.team_short).filter(Boolean))}; }
+  const L=window.__LMs; if(state.year!==L.y||state.month!==L.m) return [];
+  const names=new Set(have||[]), out=[];
+  Object.keys(MKT_INFO).forEach(n=>{
+    const m=MKT_INFO[n]; if(!m||m.act!==1||!m.tm||names.has(n)) return;
+    if(!/^(Checker|Senior Checker|Agent|Broker)$/.test(m.pos||'')) return;
+    if(!L.T.has(m.tm)||_HUB_RM_NAMES.has(n)) return;
+    const fr={team_short:m.tm};
+    if(!buMatch(fr)||!amMatch(fr)||!hubMatch(fr)) return;
+    if(state.team && !String(state.team).startsWith(m.tm)) return;
+    out.push({key:n,team:m.tm,pos:m.pos,...agg([]),_zero:1});
+  });
+  return out;
+}
 /* ระดับของตาราง Team ตามตัวกรอง: ใช้ร่วมกันทั้งมุมมองปกติ / Apple vs Android / ผู้ทำเคส */
 const _TM_LVL_NAME={bu:'BU',am:'AM',hub:'Hub RM',team:'Team',mk:'CK/BK/AG'};
 function _tmKeyOf(lvl){
@@ -5341,12 +5371,14 @@ function render(){
   const inTeamMode = teamFiltered && mktSrc.length>0;
 
   const mkAll   =groupBy(rankRows,r=>r.marketing_fullname,(k,rs)=>({key:k,team:rs[0].team_short,pos:rs[0].app_mkt_position||'',...agg(rs)}));
+  const _zeroMk =_zeroStaff((()=>{const h=new Set();rows.forEach(r=>{const a=String(r.marketing_fullname||'').replace(/\s+/g,' ').trim(),b=String(r.app_mkt_fullname||'').replace(/\s+/g,' ').trim();if(a)h.add(a);if(b)h.add(b)});return h})());   /* พนักงาน Active 0 เคส — ไม่มีเคสใด ๆ ในช่วงที่เลือก (ใช้เฉพาะลำดับ/ตารางรายคน) */
+  const mkAllZ  =mkAll.concat(_zeroMk);
   /* จำนวนแถว Top/Bottom: 10 บรรทัดเสมอ (ทั้งมุมมองรวมและกรองทีมเดียว) */
   const MK_LIMIT = 10;
   const topMk   =[...mkAll].sort((a,b)=>b.apps-a.apps).slice(0,MK_LIMIT);
   /* Bottom = ผู้ทำผลงานน้อยที่สุดจริง — รวมทุกคนใน mkAll ไม่กรอง apps>=N
      แม้ apps น้อยกว่า 5 ก็ต้องอยู่ในกลุ่มนี้ */
-  const botMk   =[...mkAll].sort((a,b)=>a.apps-b.apps||a.attach_rate-b.attach_rate).slice(0,MK_LIMIT);
+  const botMk   =[...mkAllZ].sort((a,b)=>a.apps-b.apps||a.attach_rate-b.attach_rate).slice(0,MK_LIMIT);
   // อัปเดตหัวข้อ section ให้สะท้อน limit ปัจจุบัน (ใช้จำนวนจริงเมื่อข้อมูลน้อยกว่า limit)
   const topMkN = topMk.length, botMkN = botMk.length;
   const mkHeadN = Math.max(topMkN, botMkN);
@@ -5616,13 +5648,14 @@ function render(){
   if(_teamView==='cm'){ _drawCmTable(rows, _tmLevel); return; }
   const _vn=document.getElementById('teamViewNote'); if(_vn) _vn.style.display='none';
   if(_tmLevel==='bu'||_tmLevel==='am'||_tmLevel==='hub'){ _drawTeamGroups(_tmLevel); return; }
-  if(teamFiltered && mktSrc.length){
+  const _mkTbl = mktSrc.concat(_zeroMk.filter(z=>!mktSrc.some(m=>m.key===z.key)));
+  if(teamFiltered && _mkTbl.length){
     const th=document.getElementById('teamTableHead');
     if(th) th.innerHTML='<tr><th>CK/BK/AG</th><th class="num">Apps</th><th class="num">Finance ฿</th><th class="num">% ACHIEVE TARGET</th><th class="num">฿/เคส</th><th class="num">%Mobile Care</th></tr>';
-    const _mkS=_achScale(mktSrc.map(r=>_achvMk(r.apps)));
+    const _mkS=_achScale(_mkTbl.map(r=>_achvMk(r.apps)));
     smartTable({
       tableId:'teamTable', controlsHostId:'teamCtrl',
-      rows: mktSrc, searchFields:['key'], searchPlaceholder:'ค้น CK/BK/AG…',
+      rows: _mkTbl, searchFields:['key'], searchPlaceholder:'ค้น CK/BK/AG…',
       defaultSort:{key:'apps',dir:'desc'}, emptyText:'— ไม่มีพนักงาน —',
       maxRows:15, scoreboardHostId:'teamTableScore',
       columns:[
@@ -5884,7 +5917,7 @@ function render(){
   });
 
   /* ── Productivity รายพนักงาน — full sortable+filterable table ── */
-  _renderProductivity(mkAll);
+  _renderProductivity(mkAllZ);
 
   /* Daily volume data */
   const dailyMap = {};

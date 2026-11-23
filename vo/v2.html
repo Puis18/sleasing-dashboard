@@ -238,6 +238,18 @@ const pass=(r,skip)=>{const ts=r.team_short||'';
  if(skip!=='tm'&&S.tm&&ts!==S.tm)return false;
  return true};
 const nk=n=>MI[n]&&MI[n].nick?n+' ('+MI[n].nick+')':n;
+/* พนักงาน Active ที่ยังไม่มีเคสเลยในเดือนล่าสุด (0 เคส) — ให้ขึ้นเป็นแถว 0 ในตารางพนักงาน/กรอบเตือน/ข้อความ LINE/Incentive
+   เงื่อนไข: ดูเดือนล่าสุดของข้อมูล · ทีมอยู่ในข้อมูลที่ผู้ใช้ได้รับ (ในออฟฟิศ = ทีมที่มีสิทธิ์) · ผ่านตัวกรอง BU/AM/Hub/ทีม
+   ข้อมูลจาก MASTER (mkt_info: tm/pos/act ส่งเฉพาะคน Active) · ไม่เข้ายอดรวม เป้า หรือสูตรใด ๆ */
+function zeroStaff(P){
+ const out=[];if(!window.__LM||S.m!==window.__LM)return out;
+ if(!window.__zsT||window.__zsT.a!==ALL||window.__zsT.m!==S.m){const T=new Set(),H=new Set();ALL.forEach(r=>{if(r.team_short)T.add(r.team_short);if(r._year===YEAR&&r._month===S.m){H.add(nm(r.marketing_fullname));H.add(nm(r.app_mkt_fullname))}});window.__zsT={a:ALL,t:T,h:H,m:S.m}}
+ const sv=S.sc,sm=S.mk;S.sc='all';S.mk='';
+ try{for(const n in MI){const m=MI[n];if(!m||m.act!==1||!m.tm||P[n]||window.__zsT.h.has(nm(n))||LEAD.has(nm(n)))continue;
+  if(!/^(Checker|Senior Checker|Agent|Broker)$/.test(m.pos||''))continue;
+  if(!window.__zsT.t.has(m.tm)||!isEA(m.tm)||!pass({team_short:m.tm}))continue;
+  out.push([n,m.tm])}}finally{S.sc=sv;S.mk=sm}
+ return out}
 const isStaff=r=>r.marketing_fullname&&r.marketing_fullname!=='—'&&!r.is_leader_as_mkt&&bkt(r)==='emp'&&!LEAD.has(nm(r.marketing_fullname));
 document.addEventListener('mousemove',e=>{const t=e.target.closest('[data-t]'),tp=$('tip');if(t){tp.textContent=t.dataset.t;tp.style.opacity=1;tp.style.left=Math.min(e.clientX+12,innerWidth-230)+'px';tp.style.top=e.clientY-34+'px'}else tp.style.opacity=0});
 function opts(sel,list,val,all){sel.innerHTML=`<option value="">${all}</option>`+list.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');sel.value=list.some(x=>x[0]===val)?val:'';return sel.value}
@@ -281,6 +293,7 @@ function R(){
   if(r.marketing_fullname&&!r.is_leader_as_mkt&&r.maker!=='dlr')x.mk.add(r.marketing_fullname);
   A.n++;A.f+=r.finance_amt||0;if(mo)A.mo++;if(ins)A.ins++;if(b==='dlr')A.dl++;if(b==='emp')A.ne++;
   if(isStaff(r)){const k=r.marketing_fullname,q=P[k]||(P[k]={t:t,n:0,f:0,mo:0,ins:0,l3:0});q.n++;q.f+=r.finance_amt||0;if(mo){q.mo++;if(ins)q.ins++}if(r._date===L||r._date===addD(L,-1)||r._date===addD(L,-2))q.l3++}});
+ zeroStaff(P).forEach(([n,t])=>{P[n]={t:t,n:0,f:0,mo:0,ins:0,l3:0}});
  const newT=+S.m>=10&&+YEAR>=2026,teams=Object.keys(T).filter(t=>/^TEAM/.test(t));
  const uMkt=new Set(rows.filter(r=>!r.is_leader_as_mkt&&r.maker!=='dlr').map(r=>r.marketing_fullname)).size;
  /* เป้า: ต.ค. 500/ทีม · ตั้งแต่ พ.ย. 1000/ทีม (TT) · พนักงาน 30×CK/BK/AG ของทีม · ร้านทำเคส = TT−30×CK/BK/AG (ขั้นต่ำ 50) — นับคนจากข้อมูลไม่กรองผู้ทำเคส */
@@ -418,6 +431,7 @@ function incBuild(rows,sc){
  rows.forEach(r=>{if(!isStaff(r)||incB(r)!=='emp')return;const k=r.marketing_fullname,q=P[k]||(P[k]={t:r.team_short,pos:{},ap:0,an:0,el:0,ia:0,in_:0});
   q.pos[r.app_mkt_position]=(q.pos[r.app_mkt_position]||0)+1;
   if(isMo(r)){q[incMon(r)]++;if((r.protected_amt||0)>0)q[incMon(r)==='ap'?'ia':'in_']++}else if(r.sub_product_type_code==='01')q.el++});
+ zeroStaff(P).forEach(([n,t])=>{P[n]={t:t,pos:{[(MI[n]||{}).pos||'Checker']:0},ap:0,an:0,el:0,ia:0,in_:0}});   /* พนักงาน Active 0 เคส → แถว 0 */
  Object.keys(P).forEach(k=>{const q=P[k];const pos=incPosOf(Object.keys(q.pos).sort((a,b)=>q.pos[b]-q.pos[a])[0]);
   const base={ap:q.ap,an:q.an,el:q.el,ia:q.ia,in_:q.in_,pos},c=incCK(base);
   const pr=incCK({ap:sk(q.ap),an:sk(q.an),el:sk(q.el),ia:sk(q.ia),in_:sk(q.in_),pos});
@@ -523,7 +537,7 @@ function incCopy(){
  const D=window.__VO_PAYLOAD__;if(!D)throw new Error('กรุณาเปิดผ่าน SCAP ออฟฟิศ');
  MI=D.mkt_info||{};Object.keys(HUB_INFO).forEach(k=>LEAD.add(nm(HUB_INFO[k].rm)));D.records.forEach(r=>{if(r.team_leader_fullname)LEAD.add(nm(r.team_leader_fullname))});
  ALL=D.records;
- let mx='';ALL.forEach(r=>{if(r._date&&r._date>mx)mx=r._date});YEAR=mx.slice(0,4);S.m=mx.slice(5,7);
+ let mx='';ALL.forEach(r=>{if(r._date&&r._date>mx)mx=r._date});YEAR=mx.slice(0,4);S.m=mx.slice(5,7);window.__LM=S.m;
  const ms=[...new Set(ALL.filter(r=>r._year===YEAR).map(r=>r._month))].sort();
  if(new Set(ALL.map(r=>amOf(r.team_short||''))).size<2)$('bMy').style.display='none';
  $('fMO').innerHTML=ms.map(m=>`<option value="${m}">${TH[+m]} ${YEAR}</option>`).join('');R();
