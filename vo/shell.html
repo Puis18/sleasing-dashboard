@@ -3642,7 +3642,7 @@ function _renderDrillRows(rows){
     ? `<div class="drill-more">⚠️ แสดง ${fmtInt(MAX)} จาก ${fmtInt(rows.length)} เคส — ใช้ช่องค้นหาเพื่อกรองให้แคบลง</div>`
     : '';
   const html = slice.map((r,i)=>{
-    const ins = (r.protected_amt||0) > 0 ? '<span class="dchip green">CBUBB</span>' : '';
+    const ins = (r.protected_amt||0) > 0 ? '<span class="dchip green">CHUBB</span>' : '';
     const date = r._date ? r._date.slice(5) : '—';
     const applDateFull = r._appl_date || '';
     const conDateFull  = r._date || '';
@@ -5320,7 +5320,7 @@ function render(){
     ['TOTAL FINANCE AMT', fmtBM(k.finance), `avg ${fmtB(k.avg_finance)}/app`,'blue'],
     ['AVG FINANCE / APP', fmtB(k.avg_finance),'across filtered apps','navy'],
     ['% ACHIEVE TARGET',  fmtPct(achievePct),`${fmtInt(k.apps)} / ${fmtInt(targetApps)} (${_tgtSub})`,achieveClr],
-    ['APPS WITH INSURANCE',fmtInt(k.apps_with_ins),'CBUBB Mobile Care','green'],
+    ['APPS WITH INSURANCE',fmtInt(k.apps_with_ins),'CHUBB Mobile Care','green'],
     ['%Mobile Care',  fmtPct(mo.attach_rate),`${mo.apps_with_ins} of ${mo.apps} Mobile apps`,'green'],
     ['TOTAL PREMIUM',     fmtB(k.protected_),`avg ${fmtB(k.avg_protected)}/sale`,'gold'],
   ];
@@ -5505,7 +5505,7 @@ function render(){
       raw.push({keep:1,c:_c,t:`% Achieve Target: ${_c==='green'?'✅':_c==='gold'?'🟡':'🔴'} ทำได้ <b>${fmtPct(achievePct)}</b>${_paceTxt}${_tail}${_rest}`});
     }
 
-    raw.push({keep:1,c:'gold',t:`ยอด Premium (CBUBB Mobile Care): <b>${fmtInt(k.apps_with_ins)} เคส</b> มูลค่า <b>${fmtB(k.protected_)}</b> — Attach Rate (MO) = <b>${fmtPct(mo.attach_rate)}</b> (${fmtInt(mo.apps_with_ins)}/${fmtInt(mo.apps)} เคสมือถือ เฉลี่ย ${fmtB(k.avg_protected)}/เคส)`});
+    raw.push({keep:1,c:'gold',t:`ยอด Premium (CHUBB Mobile Care): <b>${fmtInt(k.apps_with_ins)} เคส</b> มูลค่า <b>${fmtB(k.protected_)}</b> — Attach Rate (MO) = <b>${fmtPct(mo.attach_rate)}</b> (${fmtInt(mo.apps_with_ins)}/${fmtInt(mo.apps)} เคสมือถือ เฉลี่ย ${fmtB(k.avg_protected)}/เคส)`});
 
     // ทีมเก่ง/ต้องเร่ง — แสดงเฉพาะเมื่อไม่ได้เจาะทีมเดียว
     if(!state.team){
@@ -6120,7 +6120,7 @@ function render(){
           : '<span class="bar"></span>🔴 Marketing ที่ %Mobile Care &lt; 60%';
       }
     }
-    // insTeamChart canvas ถูกลบออกจาก HTML แล้ว — chart นี้ถูกแทนที่ด้วย teamAttach ใน CBUBB section
+    // insTeamChart canvas ถูกลบออกจาก HTML แล้ว — chart นี้ถูกแทนที่ด้วย teamAttach ใน CHUBB section
   }
 
   /* ── p7: ดีลเลอร์ทำเคส ── */
