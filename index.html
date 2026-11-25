@@ -1919,7 +1919,7 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
     // แปลงกลับเป็นแถวเดิมทุกค่า · ไม่มีไฟล์/เปิดไม่ได้ → โหลดไฟล์เดิมตามปกติ
     let text = null, _D = null;
     try {
-      const r1 = await fetch(base + '_data.c1.json.gz?v=20261125015126');
+      const r1 = await fetch(base + '_data.c1.json.gz?v=20261125103344');
       if (r1.ok) {
         const o = JSON.parse(await new Response(r1.body.pipeThrough(new DecompressionStream('gzip'))).text());
         if (o && o.records && o.records.f === 'c1') {
@@ -1933,7 +1933,7 @@ button:active,.pnav-btn:active,.tab:active,.dm-tg:active{transform:scale(.98);}
     } catch (_) { _D = null; }
     if (!_D) {
       // cache-buster: ผูกกับเวลา build เพื่อไม่ให้เบราว์เซอร์/CDN ใช้ข้อมูลเก่าหลัง deploy ใหม่
-      const url = base + '_data.json.gz?v=20261125015126';
+      const url = base + '_data.json.gz?v=20261125103344';
       const r = await fetch(url);
       if (!r.ok) throw new Error('HTTP ' + r.status + ' fetching ' + url);
       const dec = r.body.pipeThrough(new DecompressionStream('gzip'));
