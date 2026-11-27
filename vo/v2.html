@@ -304,6 +304,11 @@ function R(){
  const ach=pc(A.n,tgt),fc=isCur?A.n/day*dim:A.n,left=dim-day,need=tgt>A.n&&left>0?(tgt-A.n)/left:0;
  /* yesterday vs same day last month */
  const pd=L?sameDayPrevMonth(L):'',cL=L?rows.filter(r=>r._date===L).length:0,cP=pd?ALL.filter(r=>r._date===pd&&pass(r)).length:0,dw=cP?(cL-cP)/cP*100:null;
+ /* เติบโตจากเดือนก่อน: วันที่ 1 ถึงวันเดียวกันของเดือนก่อน (เดือนที่จบแล้ว = ทั้งเดือน) · ตัวกรองเดียวกัน */
+ const pYM=(+S.m===1?(+YEAR-1)+'-12':YEAR+'-'+String(+S.m-1).padStart(2,'0')),pDim=new Date(+pYM.slice(0,4),+pYM.slice(5),0).getDate(),pCut=Math.min(day,pDim),pEnd=pYM+'-'+String(pCut).padStart(2,'0');
+ const PV={n:0,f:0},PT={};ALL.forEach(r=>{const d=r._date;if(!d||d.slice(0,7)!==pYM||d>pEnd||!pass(r))return;PV.n++;PV.f+=r.finance_amt||0;const t=r.team_short||'-';PT[t]=(PT[t]||0)+1});
+ const gr=(a,b)=>b?(a-b)/b*100:null,pLab=`1–${pCut} ${TH[+pYM.slice(5)]}`;
+ const grTag=(a,b,fmt)=>{const g=gr(a,b);return g==null?'<span class="lab">เดือนก่อน: ไม่มีข้อมูลเทียบ</span>':`<span class="${g>=0?'up':'dn'}">${g>=0?'▲':'▼'} ${Math.abs(g).toFixed(1)}% เทียบ ${pLab} (${fmt(b)})</span>`};
  const scope=[S.bu&&('ทีม '+S.bu),S.sc!=='all'&&S.sc.toUpperCase(),S.am&&(AM_LABEL[S.am]||S.am).split(' · ')[0],S.hb,S.tm&&sh(S.tm),S.mk&&(S.mk==='emp'?'พนักงานทำเคส':'ร้านทำเคส')].filter(Boolean).join(' · ')||'ทุกทีม';
  const dl=d=>(+d.slice(8))+' '+TH[+d.slice(5,7)];
  $('sub').textContent=`${TH[+S.m]} ${YEAR} · ${scope}${L?' · ข้อมูลถึง '+dl(L):''}`;
@@ -311,8 +316,8 @@ function R(){
  const cnt=ser.map(a=>a.length),fin=ser.map(a=>a.reduce((s,r)=>s+(r.finance_amt||0),0));
  kpis.innerHTML=[
   [`ยอดวันที่ ${L?dl(L):'—'}`,f(cL),dw==null?'<span class="lab">ไม่มีข้อมูลเทียบ</span>':`<span class="${dw>=0?'up':'dn'}">${dw>=0?'▲':'▼'} ${Math.abs(dw).toFixed(0)}% เทียบ ${dl(pd)} (${f(cP)})</span>`,''],
-  ['สัญญาเดือนนี้',f(A.n),`<span class="lab">เฉลี่ย ${f(A.n/Math.max(day,1))}/วัน</span>`,spark(cnt,'var(--green)')],
-  ['ยอดจัด (Finance)',fB(A.f),`<span class="lab">เฉลี่ย ${fB(A.f/Math.max(A.n,1))}/สัญญา</span>`,spark(fin,'var(--navy)')],
+  ['สัญญาเดือนนี้',f(A.n),grTag(A.n,PV.n,f)+`<span class="lab" style="display:block">เฉลี่ย ${f(A.n/Math.max(day,1))}/วัน</span>`,spark(cnt,'var(--green)')],
+  ['ยอดจัด (Finance)',fB(A.f),grTag(A.f,PV.f,fB)+`<span class="lab" style="display:block">เฉลี่ย ${fB(A.f/Math.max(A.n,1))}/สัญญา</span>`,spark(fin,'var(--navy)')],
   ['%Mobile Care',pc(A.ins,A.mo).toFixed(1)+'%',`<div class="mb"><i style="width:${pc(A.ins,A.mo)}%"></i></div><span class="lab">${f(A.ins)} จาก ${f(A.mo)} สัญญามือถือ</span>`,''],
   ['ร้านทำเคส',pc(A.dl,A.n).toFixed(1)+'%',`<span class="lab sd">ร้าน ${f(A.dl)} · พนักงาน ${f(A.ne)}</span><span class="lab sm">ร้าน ${f(A.dl)} · พนง. ${f(A.ne)}</span>`,'']
  ].map(([l,v,s,g])=>`<div class="card kpi"><div><div class="lab">${l}</div><div class="big">${v}</div>${s}</div>${g}</div>`).join('');
@@ -357,12 +362,12 @@ function R(){
  ${newT&&isCur?`<div class="wh">📉 ทีมที่คาดว่าจบต่ำกว่า 80% ของเป้า (${low.length})</div>${chips(low,x=>`<span class="chip" onclick="S.tm='${x[0]}';R()">${sh(x[0])} · คาด ${f(x[1])}/${f(x[2])} (ขาด ${f(x[2]-x[1])})</span>`,24)}`:''}
  <div class="wh">👤 พนักงานต่ำกว่าที่ควรได้ ณ วันนี้ (${lowS.length} คน · ควรได้ ${exS} เคส)</div>${chips(lowS,x=>`<span class="chip">${nk(x[0])} (${sh(x[1].t)}) ${x[1].n}/${pT}</span>`,12)}`;
  /* team table */
- TB.tm.rows=teams.map(t=>{const x=T[t],g=tT(t),fcT=isCur?x.n/day*dim:x.n;return{t,'ทีม':sh(t),'หัวหน้าทีม':x.lead,'AM':(amOf(t)||'MC').replace('RM','AM'),'สัญญา':x.n,'เป้า':g,'% Achieve':+pc(x.n,g).toFixed(1),'ทำได้/ควรได้ %':+pc(pc(x.n,g),exp).toFixed(0),'คาดสิ้นเดือน':Math.round(fcT),'%Mobile Care':+pc(x.ins,x.mo).toFixed(1),'% ร้านทำ':+pc(x.dl,x.n).toFixed(1),'ยอดจัด':Math.round(x.f)}});drawTB('tm');
+ TB.tm.rows=teams.map(t=>{const x=T[t],g=tT(t),fcT=isCur?x.n/day*dim:x.n;return{t,'ทีม':sh(t),'หัวหน้าทีม':x.lead,'AM':(amOf(t)||'MC').replace('RM','AM'),'สัญญา':x.n,'เดือนก่อน':PT[t]||0,'เติบโต %':PT[t]?+gr(x.n,PT[t]).toFixed(1):(x.n?100:0),'เป้า':g,'% Achieve':+pc(x.n,g).toFixed(1),'ทำได้/ควรได้ %':+pc(pc(x.n,g),exp).toFixed(0),'คาดสิ้นเดือน':Math.round(fcT),'%Mobile Care':+pc(x.ins,x.mo).toFixed(1),'% ร้านทำ':+pc(x.dl,x.n).toFixed(1),'ยอดจัด':Math.round(x.f)}});drawTB('tm');
  /* staff table */
  eml.textContent=`${Object.keys(P).length} คน · เป้า ${pT} สัญญา/คน · ควรได้ ณ วันนี้ ${exS} (ไม่นับ TM/Hub RM และเคสร้านทำ)`;
  TB.em.rows=Object.keys(P).map(k=>{const q=P[k];return{'พนักงาน':nk(k),'ทีม':sh(q.t),'สัญญา':q.n,'% Achieve':+pc(q.n,pT).toFixed(1),'ขาดจากที่ควรได้':Math.max(0,exS-q.n),'คาดสิ้นเดือน':Math.round(isCur?q.n/day*dim:q.n),'%Mobile Care':+pc(q.ins,q.mo).toFixed(1),'ยอดจัด':Math.round(q.f)}});drawTB('em');
  note.textContent=`ข้อมูลชุดเดียวกับ Dashboard หลัก · เป้า: ก่อน ต.ค. 20 สัญญา/คน, ต.ค. 500 สัญญา/ทีม, ตั้งแต่ พ.ย. 1,000 สัญญา/ทีม · พนักงาน 30 × CK/BK/AG · ร้านทำเคส เป้าทีม − 30 × CK/BK/AG (ขั้นต่ำ 50/ทีม) · %Mobile Care = สัญญาที่มีประกัน ÷ สัญญามือถือ · สี: % Achieve เทียบที่ควรได้ ณ วันนี้ (เขียว ≥100%, เหลือง 80–99%, แดง <80%) · %Mobile Care (เขียว ≥80%, เหลือง 60–79%, แดง <60%) · % ร้านทำ (เขียว ≤50%, เหลือง 51–70%, แดง >70%) · ดูรายละเอียด Dealer/VAT/Hub Master/ส่งออกรายสัญญาได้ที่ "รายละเอียดเต็ม"`;
- CTX={L,pd,cL,cP,dw,A,tgt,ach,exp,need,fc,fcp,day,dim,T,P,teams,z0,z3,newT,isCur,pT,exS,scope,tT};
+ CTX={PV,pLab,gr,L,pd,cL,cP,dw,A,tgt,ach,exp,need,fc,fcp,day,dim,T,P,teams,z0,z3,newT,isCur,pT,exS,scope,tT};
  try{incRender({L,day,dim,isCur})}catch(e){console.warn("incentive",e)}
 }
 /* sortable tables */
@@ -371,8 +376,8 @@ const MON=new Set(['ยอดจัด']),PCT=new Set(['% Achieve','%Mobile Care
 const pctCls=(k,v)=>k==='% Achieve'?cls(pc(v,CTX.exp||100)):k==='%Mobile Care'?(v>=80?'g':v>=60?'a':'r'):k==='% ร้านทำ'?(v>70?'r':v>50?'a':'g'):'';
 function drawTB(id){const t=TB[id];let r=t.rows.slice();if(id==='em'&&eq.value){const q=eq.value.toLowerCase();r=r.filter(x=>(x['พนักงาน']+x['ทีม']).toLowerCase().includes(q))}
  r.sort((x,y)=>(x[t.k]>y[t.k]?1:x[t.k]<y[t.k]?-1:0)*t.d);const K=Object.keys(t.rows[0]||{}).filter(k=>k!=='t');
- $(t.el).innerHTML='<tr>'+K.map(k=>`<th class="${typeof(t.rows[0]||{})[k]==='number'?'r':''}" onclick="TB.${id}.d=TB.${id}.k==='${k}'?-TB.${id}.d:-1;TB.${id}.k='${k}';drawTB('${id}')">${k}${t.k===k?(t.d<0?' ↓':' ↑'):''}</th>`).join('')+'</tr>'+r.slice(0,400).map(x=>'<tr>'+K.map(k=>{const v=x[k];if(typeof v!=='number')return `<td>${k===t.click?`<a href="#" onclick="S.tm='${x.t}';R();return false">${v}</a>`:v}</td>`;const pk=pctCls(k,v);if(pk)return `<td class="r"><span class="tag ${pk}">${v.toFixed(1)}%</span></td>`;if(k==='ทำได้/ควรได้ %')return `<td class="r"><span class="tag ${cls(v)}">${v.toFixed(0)}%</span></td>`;return `<td class="r">${MON.has(k)?fB(v):PCT.has(k)?v.toFixed(1)+'%':f(v)}</td>`}).join('')+'</tr>').join('')}
-const MX=new Set(['AM','เป้า','คาดสิ้นเดือน','%Mobile Care','% ร้านทำ','ยอดจัด']);
+ $(t.el).innerHTML='<tr>'+K.map(k=>`<th class="${typeof(t.rows[0]||{})[k]==='number'?'r':''}" onclick="TB.${id}.d=TB.${id}.k==='${k}'?-TB.${id}.d:-1;TB.${id}.k='${k}';drawTB('${id}')">${k}${t.k===k?(t.d<0?' ↓':' ↑'):''}</th>`).join('')+'</tr>'+r.slice(0,400).map(x=>'<tr>'+K.map(k=>{const v=x[k];if(typeof v!=='number')return `<td>${k===t.click?`<a href="#" onclick="S.tm='${x.t}';R();return false">${v}</a>`:v}</td>`;const pk=pctCls(k,v);if(pk)return `<td class="r"><span class="tag ${pk}">${v.toFixed(1)}%</span></td>`;if(k==='เติบโต %')return `<td class="r"><span class="${v>=0?'up':'dn'}" style="white-space:nowrap">${v>=0?'▲':'▼'} ${Math.abs(v).toFixed(1)}%</span></td>`;if(k==='ทำได้/ควรได้ %')return `<td class="r"><span class="tag ${cls(v)}">${v.toFixed(0)}%</span></td>`;return `<td class="r">${MON.has(k)?fB(v):PCT.has(k)?v.toFixed(1)+'%':f(v)}</td>`}).join('')+'</tr>').join('')}
+const MX=new Set(['AM','เดือนก่อน','เป้า','คาดสิ้นเดือน','%Mobile Care','% ร้านทำ','ยอดจัด']);
 const _drawTB=drawTB;drawTB=function(id){_drawTB(id);const t=TB[id],K=Object.keys(t.rows[0]||{}).filter(k=>k!=='t');$(t.el).querySelectorAll('tr').forEach(tr=>[...tr.children].forEach((c,i)=>{if(MX.has(K[i]))c.classList.add('mx')}))};
 eq.oninput=()=>drawTB('em');
 /* LINE summary */
@@ -381,7 +386,7 @@ function lineText(){const o=CTX,SEP='━━━━━━━━━━━━━━�
  ln.push('📊 สรุปยอด '+o.scope+' · '+(o.L?dl(o.L):'')+' '+yy,SEP,'','① ภาพรวม');
  ln.push('• เมื่อวาน '+f(o.cL)+' สัญญา'+(o.dw==null?'':' ('+(o.dw>=0?'▲':'▼')+Math.abs(o.dw).toFixed(0)+'% เทียบ '+dl(o.pd)+')'));
  const r=pc(o.ach,o.exp),lab=r>=100?'🟢 เกินเป้า':r>=80?'🟡 ใกล้เป้า':'🔴 ต่ำกว่าเป้า';
- ln.push('• สะสม '+f(o.A.n)+' / เป้า '+f(o.tgt)+' = '+o.ach.toFixed(0)+'%','  ควรได้ ณ วันนี้ '+o.exp.toFixed(0)+'% → '+lab,'• ต้องทำต่อวัน '+f(o.need)+' · คาดสิ้นเดือน '+f(o.fc)+' ('+o.fcp.toFixed(0)+'%)');
+ ln.push('• สะสม '+f(o.A.n)+' / เป้า '+f(o.tgt)+' = '+o.ach.toFixed(0)+'%','  ควรได้ ณ วันนี้ '+o.exp.toFixed(0)+'% → '+lab,...(o.gr(o.A.n,o.PV.n)==null?[]:['• เทียบเดือนก่อน ('+o.pLab+') '+f(o.PV.n)+' → '+(o.gr(o.A.n,o.PV.n)>=0?'▲':'▼')+Math.abs(o.gr(o.A.n,o.PV.n)).toFixed(1)+'%']),'• ต้องทำต่อวัน '+f(o.need)+' · คาดสิ้นเดือน '+f(o.fc)+' ('+o.fcp.toFixed(0)+'%)');
  const tot=o.A.ne+o.A.dl||1;ln.push('','② ผู้ทำเคส (สะสมเดือนนี้)','• พนักงานทำ '+f(o.A.ne)+' ('+(o.A.ne/tot*100).toFixed(0)+'%)','• ร้านทำ '+f(o.A.dl)+' ('+(o.A.dl/tot*100).toFixed(0)+'%)');
  const U=[],seen={};o.z3.forEach(t=>{U.push([t,'ไม่มีเคส 3 วันติด']);seen[t]=1});
  if(o.newT&&o.isCur)o.teams.map(t=>[t,o.T[t].n/o.day*o.dim,o.tT(t)]).filter(x=>x[2]>0&&x[1]<x[2]*0.8&&!seen[x[0]]).sort((a,b)=>a[1]/a[2]-b[1]/b[2]).forEach(x=>{U.push([x[0],'คาดจบ '+f(x[1])+' ('+(x[1]/x[2]*100).toFixed(0)+'% ของเป้า)']);seen[x[0]]=1});
